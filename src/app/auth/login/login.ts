@@ -25,7 +25,10 @@ export class Login {
 
   login(){
     this.authService.login(this.from).subscribe((res:any)=>{
+
       this.tokenService.setToken(res.token);
+      this.tokenService.setRole(res.role);
+      
       this.router.navigate(['/dashboard'])
     });
   }
