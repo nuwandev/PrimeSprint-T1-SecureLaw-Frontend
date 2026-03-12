@@ -14,10 +14,6 @@ export class Auth {
     return this.http.post(`${this.API}/login`,data)
   }
 
-  register(data:any){
-    return this.http.post(`${this.API}/register`,data)
-  }
-
   logout(data:any){
     return this.http.post(`${this.API}/logout`,data)
   }
