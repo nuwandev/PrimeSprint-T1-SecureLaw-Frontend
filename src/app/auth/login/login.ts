@@ -1,4 +1,8 @@
 import { Component } from '@angular/core';
+import { Auth } from '../../core/services/auth';
+import { Token } from '../../core/services/token';
+import { Router } from '@angular/router';
+import { form } from '@angular/forms/signals';
 
 @Component({
   selector: 'app-login',
@@ -8,4 +12,21 @@ import { Component } from '@angular/core';
 })
 export class Login {
 
+  from = {
+    userNameOrEmail:'',
+    password:''
+  }
+
+  constructor(
+    private authService:Auth,
+    private tokenService:Token,
+    private router:Router 
+  ){}
+
+  login(){
+    this.authService.login(this.from).subscribe((res:any)=>{
+      this.tokenService.setToken(res.token);
+      this.router.navigate(['/dashboard'])
+    });
+  }
 }
