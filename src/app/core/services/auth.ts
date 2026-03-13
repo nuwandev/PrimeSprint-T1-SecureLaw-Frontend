@@ -19,4 +19,9 @@ export class Auth {
     return this.http.post(`${this.API}/logout`, data)
   }
 
+  me(){
+  return this.http.get(
+    "http://localhost:8080/api/auth/me"
+  );
+}
 }
