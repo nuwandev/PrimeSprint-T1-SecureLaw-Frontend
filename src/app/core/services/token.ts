@@ -26,6 +26,7 @@ export class Token {
   }
 
   clear(){
-    localStorage.clear();
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
   }
 }
