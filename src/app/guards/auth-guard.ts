@@ -5,10 +5,27 @@ export const authGuard: CanActivateFn = (route, state) => {
 
   const router = inject(Router);
   const token = localStorage.getItem("token");
-  
-  if(token){
+  const userRole = localStorage.getItem("role");
+
+  // If navigating to login and already logged in, redirect based on role
+  if (state.url === '/login' || state.url === '/') {
+    if (!token) {
+      return true;
+    }
+
+    if (userRole === 'SENIOR') {
+      router.navigate(['/admin/user-management']);
+    } else {
+      router.navigate(['/chat']);
+    }
+    return false;
+  }
+
+  // For all other guarded routes, require token
+  if (token) {
     return true;
   }
+
   router.navigate(['/login']);
   return false;
 };

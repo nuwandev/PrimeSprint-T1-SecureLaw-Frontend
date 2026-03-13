@@ -13,7 +13,8 @@ export const routes: Routes = [
     },
     {
         path: 'login',
-        component: Login
+        component: Login,
+        canActivate: [authGuard]
     },
     {
         path: 'admin',
