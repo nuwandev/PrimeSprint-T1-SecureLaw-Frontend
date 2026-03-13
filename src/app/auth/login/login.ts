@@ -1,35 +1,47 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Auth } from '../../core/services/auth';
 import { Token } from '../../core/services/token';
 import { Router } from '@angular/router';
-import { form } from '@angular/forms/signals';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { LoginRequest } from '../../models/auth';
 
 @Component({
   selector: 'app-login',
-  imports: [],
+  imports: [ReactiveFormsModule],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
 export class Login {
 
-  from = {
-    userNameOrEmail:'',
-    password:''
-  }
+  private readonly fb = inject(FormBuilder);
 
   constructor(
-    private authService:Auth,
-    private tokenService:Token,
-    private router:Router 
-  ){}
+    private authService: Auth,
+    private tokenService: Token,
+    private router: Router
+  ) { }
 
-  login(){
-    this.authService.login(this.from).subscribe((res:any)=>{
+  loginForm = this.fb.group({
+    usernameOrEmail: ['', Validators.required],
+    password: ['', Validators.required]
+  });
+
+  login() {
+
+    if (this.loginForm.invalid) {
+      return;
+    }
+
+    this.authService.login(this.loginForm.value as LoginRequest).subscribe((res: any) => {
 
       this.tokenService.setToken(res.token);
       this.tokenService.setRole(res.role);
-      
-      this.router.navigate(['/dashboard'])
+
+      if (res.role === 'SENIOR') {
+        this.router.navigate(['/senior']);
+      } else {
+        this.router.navigate(['/junior']);
+      }
     });
   }
 }

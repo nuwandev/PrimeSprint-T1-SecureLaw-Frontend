@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { LoginRequest } from '../../models/auth';
 
 @Injectable({
   providedIn: 'root',
@@ -7,15 +8,15 @@ import { Injectable } from '@angular/core';
 export class Auth {
 
   API = "http://localhost:8080/api/auth";
-  
-  constructor(private http: HttpClient){}
 
-  login(data:any){
-    return this.http.post(`${this.API}/login`,data)
+  constructor(private http: HttpClient) { }
+
+  login(data: LoginRequest) {
+    return this.http.post(`${this.API}/login`, data)
   }
 
-  logout(data:any){
-    return this.http.post(`${this.API}/logout`,data)
+  logout(data: any) {
+    return this.http.post(`${this.API}/logout`, data)
   }
 
 }
