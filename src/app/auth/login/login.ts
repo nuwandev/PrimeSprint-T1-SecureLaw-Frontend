@@ -38,9 +38,9 @@ export class Login {
       this.tokenService.setRole(res.role);
 
       if (res.role === 'SENIOR') {
-        this.router.navigate(['/senior']);
+        this.router.navigate(['/admin/user-management']);
       } else {
-        this.router.navigate(['/junior']);
+        this.router.navigate(['/chat']);
       }
     });
   }

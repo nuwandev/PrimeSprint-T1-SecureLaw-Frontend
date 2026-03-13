@@ -1,10 +1,9 @@
 import { Routes } from '@angular/router';
 import { Login } from './auth/login/login';
+import { UserMgt } from './pages/admin/user-mgt/user-mgt';
 import { authGuard } from './guards/auth-guard';
-import { Dashboard } from './pages/dashboard/dashboard';
 import { roleGuard } from './guards/role-guard';
-import { SeniorDashboard } from './pages/dashboard/senior-dashboard/senior-dashboard';
-import { JuniorDashboard } from './pages/dashboard/junior-dashboard/junior-dashboard';
+import { Chat } from './pages/chat/chat';
 
 export const routes: Routes = [
     {
@@ -18,25 +17,19 @@ export const routes: Routes = [
     },
     {
         path: 'admin',
-        canActivate: [authGuard],
+        canActivate: [authGuard, roleGuard],
+        data: { roles: ['SENIOR'] },
         children: [
             {
                 path: 'user-management',
-                component: Dashboard,
+                component: UserMgt
             }
         ]
     },
     {
-        path: 'senior',
-        component: SeniorDashboard,
+        path: 'chat',
         canActivate: [authGuard, roleGuard],
-        data: { roles: ['SENIOR'] }
-    },
-
-    {
-        path: 'junior',
-        component: JuniorDashboard,
-        canActivate: [authGuard, roleGuard],
-        data: { roles: ['JUNIOR'] }
+        data: { roles: ['SENIOR', 'JUNIOR'] },
+        component: Chat
     }
 ];
