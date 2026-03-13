@@ -182,19 +182,4 @@
     </div>
   </div>
 
-  <script>
-    // Password toggle
-    function togglePassword() {
-      const input = document.getElementById('passwordInput');
-      input.type = input.type === 'password' ? 'text' : 'password';
-    }
-
-    // Checkbox visual
-    const checkbox = document.getElementById('remember');
-    const checkIcon = document.getElementById('checkIcon');
-    checkbox.addEventListener('change', () => {
-      checkIcon.classList.toggle('hidden', !checkbox.checked);
-    });
-  </script>
-
 </div>
