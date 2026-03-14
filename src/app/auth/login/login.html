@@ -118,14 +118,14 @@
                 <input
                   formControlName="password"
                   id="passwordInput"
-                  type="password"
+                  [type]="showPassword ? 'text' : 'password'"
                   placeholder="••••••••"
                   class="w-full border border-zinc-200 px-4 py-3 pr-11 text-sm text-zinc-800 placeholder-zinc-400 bg-white focus:outline-none focus:border-zinc-900 transition-colors duration-150"
                 />
                 <!-- Toggle visibility -->
                 <button
                   type="button"
-                  onclick="togglePassword()"
+                  (click)="togglePassword()"
                   class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 transition-colors p-1"
                 >
                   <svg
