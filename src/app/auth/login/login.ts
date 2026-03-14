@@ -14,6 +14,7 @@ import { LoginRequest } from '../../models/auth';
 export class Login {
 
   private readonly fb = inject(FormBuilder);
+  showPassword : boolean = false;
 
   constructor(
     private authService: Auth,
@@ -43,5 +44,9 @@ export class Login {
         this.router.navigate(['/chat']);
       }
     });
+  }
+
+  togglePassword() {
+    this.showPassword = !this.showPassword;
   }
 }
