@@ -1,10 +1,11 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { HealthService } from './services/health';
 import { environment } from '../environments/environment';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
-  imports: [],
+  imports: [RouterOutlet],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
