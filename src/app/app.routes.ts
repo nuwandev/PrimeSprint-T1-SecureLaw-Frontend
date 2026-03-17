@@ -4,7 +4,18 @@ import { ChatWindow } from './page/mainLayout/chat-window/chat-window';
 export const routes: Routes = [
 
   {
-    path: 'chat',
+    path: '',
     component: ChatWindow
+
+  },
+  {
+    path: 'chat/:chatId',
+     component: ChatWindow
+  },
+  {
+    path: '',
+    redirectTo: '/chat', 
+    pathMatch: 'full'
   }
+
 ];
