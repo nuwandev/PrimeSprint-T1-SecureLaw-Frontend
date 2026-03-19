@@ -172,7 +172,7 @@ export class UserMgt implements OnInit {
 
     const { id, usernameConfirm } = this.deleteForm.value;
 
-    if (!this.deleteUserTarget || !usernameConfirm || usernameConfirm.trim() !== this.deleteUserTarget.username) {
+    if (!this.deleteUserTarget || usernameConfirm?.trim() !== this.deleteUserTarget.username) {
       return;
     }
 

@@ -3,9 +3,6 @@ import { HealthService } from './services/health';
 import { environment } from '../environments/environment';
 import { RouterOutlet } from '@angular/router';
 
-
-
-
 @Component({
   selector: 'app-root',
   imports: [RouterOutlet],
@@ -14,17 +11,7 @@ import { RouterOutlet } from '@angular/router';
 })
 export class App implements OnInit {
   protected readonly title = signal('SecureLaw');
-
-
-
-
-
-
-  constructor(
-    private readonly healthService: HealthService
-  ) {}
-
-
+  constructor(private readonly healthService: HealthService) {}
   ngOnInit(): void {
     console.log(`Backend URL :${environment.apiUrl}`);
 
@@ -32,23 +19,5 @@ export class App implements OnInit {
       next: (res) => console.log('Backend is UP', res),
       error: (err) => console.error('Backend is DOWN', err),
     });
-
-
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
