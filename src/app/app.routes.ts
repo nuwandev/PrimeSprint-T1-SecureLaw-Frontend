@@ -26,14 +26,10 @@ export const routes: Routes = [
             }
         ]
     },
-        {
-        path: 'chat/:conversationId',   // ✅ fixed: was 'chat:/conversationId'
-        component: Chat,
-        canActivate: [authGuard]
-    },
     {
-        path: 'chat',                   // ✅ added: base /chat route without ID
-        component: Chat,
-        canActivate: [authGuard]
+        path: 'chat/:conversationId',
+        canActivate: [authGuard, roleGuard],
+        data: { roles: ['SENIOR', 'JUNIOR'] },
+        component: Chat
     }
 ];
