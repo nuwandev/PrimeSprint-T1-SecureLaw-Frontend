@@ -1,5 +1,5 @@
 export type UserRole = 'SENIOR' | 'JUNIOR' ;
-export type UserStatus = 'Active' | 'Disabled';
+export type UserStatus = 'ACTIVE' | 'DISABLED';
 
 export interface User {
     id: string
@@ -17,5 +17,14 @@ export interface UserCreateRequest {
     email: string;
     password: string;
     role: UserRole;
-    seniorId: string;
+    seniorId?: string | null;
+}
+
+export interface UserUpdateRequest {
+    username: string;
+    email: string;
+    password?: string | null;
+    role: UserRole;
+    seniorId?: string | null;
+    status: UserStatus | string;
 }

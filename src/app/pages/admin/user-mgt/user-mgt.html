@@ -70,25 +70,25 @@
                 <p class="text-xs t-label text-zinc-400 tracking-widest uppercase mb-1 transition-colors duration-200">
                     Total Users</p>
                 <p class="serif text-2xl sm:text-3xl font-semibold t-head text-zinc-900 transition-colors duration-200">
-                    24</p>
+                    {{ totalElements() }}</p>
             </div>
             <div class="stat-card bg-white px-4 sm:px-6 py-4 sm:py-5 transition-colors duration-200">
                 <p class="text-xs t-label text-zinc-400 tracking-widest uppercase mb-1 transition-colors duration-200">
                     Active</p>
                 <p class="serif text-2xl sm:text-3xl font-semibold t-head text-zinc-900 transition-colors duration-200">
-                    21</p>
+                    {{ activeOnPage() }}</p>
             </div>
             <div class="stat-card bg-white px-4 sm:px-6 py-4 sm:py-5 transition-colors duration-200">
                 <p class="text-xs t-label text-zinc-400 tracking-widest uppercase mb-1 transition-colors duration-200">
                     Senior</p>
                 <p class="serif text-2xl sm:text-3xl font-semibold t-head text-zinc-900 transition-colors duration-200">
-                    8</p>
+                    {{ seniorOnPage() }}</p>
             </div>
             <div class="stat-card bg-white px-4 sm:px-6 py-4 sm:py-5 transition-colors duration-200">
                 <p class="text-xs t-label text-zinc-400 tracking-widest uppercase mb-1 transition-colors duration-200">
                     Disabled</p>
                 <p class="serif text-2xl sm:text-3xl font-semibold t-head text-zinc-900 transition-colors duration-200">
-                    3</p>
+                    {{ disabledOnPage() }}</p>
             </div>
         </div>
 
@@ -99,25 +99,27 @@
                     <circle cx="11" cy="11" r="8" />
                     <path stroke-linecap="round" d="m21 21-4.35-4.35" />
                 </svg>
-                <input type="text" placeholder="Search by username or email..."
+                <input type="text" [value]="searchTerm()" (input)="onSearchChange($event.target.value)" placeholder="Search by username or email..."
                     class="inp w-full pl-9 pr-4 py-2.5 border border-zinc-200 text-sm text-zinc-800 placeholder-zinc-400 bg-white focus:outline-none focus:border-zinc-900 transition-colors duration-150" />
             </div>
             <div class="flex gap-2">
                 <select
-                    class="inp flex-1 sm:flex-none border border-zinc-200 text-sm text-zinc-700 pl-3 pr-9 py-2.5 bg-white focus:outline-none appearance-none transition-colors duration-200">
+                    class="inp flex-1 sm:flex-none border border-zinc-200 text-sm text-zinc-700 pl-3 pr-9 py-2.5 bg-white focus:outline-none appearance-none transition-colors duration-200"
+                    (change)="onRoleFilterChange($any($event.target).value)">
                     <option value="">All Roles</option>
                     <option value="SENIOR">Senior</option>
                     <option value="JUNIOR">Junior</option>
                 </select>
                 <select
-                    class="inp flex-1 sm:flex-none border border-zinc-200 text-sm text-zinc-700 pl-3 pr-9 py-2.5 bg-white focus:outline-none appearance-none transition-colors duration-200">
+                    class="inp flex-1 sm:flex-none border border-zinc-200 text-sm text-zinc-700 pl-3 pr-9 py-2.5 bg-white focus:outline-none appearance-none transition-colors duration-200"
+                    (change)="onStatusFilterChange($any($event.target).value)">
                     <option value="">All Statuses</option>
                     <option value="ACTIVE">Active</option>
                     <option value="DISABLED">Disabled</option>
                 </select>
             </div>
-            <span class="text-xs t-label text-zinc-400 hidden sm:inline transition-colors duration-200">24
-                results</span>
+            <span class="text-xs t-label text-zinc-400 hidden sm:inline transition-colors duration-200">Showing
+                {{ totalOnPage() }} of {{ totalElements() }} users</span>
         </div>
         <div class="b-std border border-zinc-200 hidden md:block overflow-x-auto transition-colors duration-200">
             <table class="w-full text-sm min-w-[900px]">
@@ -147,7 +149,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @for (u of users(); track u.id) {
+                    @for (u of visibleUsers(); track u.id) {
                     <tr
                         class="bg-row bg-white border-b b-light border-zinc-100 hover:bg-zinc-50 transition-colors duration-150">
                         <td class="px-5 py-4 uuid-cell">
@@ -175,11 +177,11 @@
                             {{ u.createdAt}}</td>
                         <td class="px-5 py-4 text-right">
                             <div class="flex items-center justify-end gap-2">
-                                <button type="button" (click)="openEditUserModel()"
+                                <button type="button" (click)="openEditUserModel(u)"
                                     class="btn-edit text-xs border border-zinc-300 text-zinc-600 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 whitespace-nowrap transition-colors duration-150">Edit</button>
-                                <button type="button" (click)="openDeactivateUserModel()"
+                                <button type="button" (click)="openDeactivateUserModel(u)"
                                     class="btn-deact text-xs border border-zinc-300 text-zinc-400 px-3 py-1.5 hover:border-red-300 hover:text-red-600 whitespace-nowrap transition-colors duration-150">Deactivate</button>
-                                <button type="button" (click)="openDeleteUserModel()"
+                                <button type="button" (click)="openDeleteUserModel(u)"
                                     class="btn-delete text-xs border border-zinc-300 text-zinc-400 px-3 py-1.5 hover:border-red-300 hover:text-red-600 whitespace-nowrap transition-colors duration-150">Delete
                                     User</button>
                             </div>
@@ -214,7 +216,7 @@
                             class="btn-edit text-xs border border-zinc-300 text-zinc-600 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 transition-colors">Edit</button>
                         <button type="button"
                             class="btn-deact text-xs border border-zinc-300 text-zinc-400 px-3 py-1.5 hover:border-red-300 hover:text-red-600 transition-colors">Deactivate</button>
-                        <button type="button" (click)="openDeleteUserModel()"
+                        <button type="button"
                             class="btn-delete text-xs border border-zinc-300 text-zinc-400 px-3 py-1.5 hover:border-red-300 hover:text-red-600 transition-colors">Delete</button>
                     </div>
                 </div>
@@ -246,7 +248,7 @@
                             class="btn-edit text-xs border border-zinc-300 text-zinc-600 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 transition-colors">Edit</button>
                         <button type="button"
                             class="btn-deact text-xs border border-zinc-300 text-zinc-400 px-3 py-1.5 hover:border-red-300 hover:text-red-600 transition-colors">Deactivate</button>
-                        <button type="button" (click)="openDeleteUserModel()"
+                        <button type="button"
                             class="btn-delete text-xs border border-zinc-300 text-zinc-400 px-3 py-1.5 hover:border-red-300 hover:text-red-600 transition-colors">Delete</button>
                     </div>
                 </div>
@@ -278,7 +280,7 @@
                             class="btn-edit text-xs border border-zinc-300 text-zinc-600 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 transition-colors">Edit</button>
                         <button
                             class="btn-deact-d text-xs border border-zinc-200 text-zinc-300 px-3 py-1.5 cursor-not-allowed transition-colors">Deactivate</button>
-                        <button type="button" (click)="openDeleteUserModel()"
+                        <button type="button"
                             class="btn-delete text-xs border border-zinc-300 text-zinc-400 px-3 py-1.5 hover:border-red-300 hover:text-red-600 transition-colors">Delete</button>
                     </div>
                 </div>
@@ -306,7 +308,7 @@
                             class="btn-edit text-xs border border-zinc-300 text-zinc-600 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 transition-colors">Edit</button>
                         <button type="button"
                             class="btn-deact text-xs border border-zinc-300 text-zinc-400 px-3 py-1.5 hover:border-red-300 hover:text-red-600 transition-colors">Deactivate</button>
-                        <button type="button" (click)="openDeleteUserModel()"
+                        <button type="button"
                             class="btn-delete text-xs border border-zinc-300 text-zinc-400 px-3 py-1.5 hover:border-red-300 hover:text-red-600 transition-colors">Delete</button>
                     </div>
                 </div>
@@ -338,7 +340,7 @@
                             class="btn-edit text-xs border border-zinc-300 text-zinc-600 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 transition-colors">Edit</button>
                         <button type="button"
                             class="btn-deact text-xs border border-zinc-300 text-zinc-400 px-3 py-1.5 hover:border-red-300 hover:text-red-600 transition-colors">Deactivate</button>
-                        <button type="button" (click)="openDeleteUserModel()"
+                        <button type="button"
                             class="btn-delete text-xs border border-zinc-300 text-zinc-400 px-3 py-1.5 hover:border-red-300 hover:text-red-600 transition-colors">Delete</button>
                     </div>
                 </div>
@@ -347,19 +349,17 @@
         </div>
 
         <div class="flex flex-col sm:flex-row items-center justify-between gap-3 mt-5">
-            <p class="text-xs t-label text-zinc-400 order-2 sm:order-1 transition-colors duration-200">Showing 7 of
-                24 users</p>
+            <p class="text-xs t-label text-zinc-400 order-2 sm:order-1 transition-colors duration-200">Showing
+                {{ totalOnPage() }} of {{ totalElements() }} users</p>
             <div class="flex items-center gap-1 order-1 sm:order-2">
                 <button
-                    class="pag-btn w-8 h-8 border border-zinc-200 text-zinc-400 text-xs flex items-center justify-center hover:border-zinc-900 hover:text-zinc-900 transition-colors">‹</button>
+                    class="pag-btn w-8 h-8 border border-zinc-200 text-zinc-400 text-xs flex items-center justify-center hover:border-zinc-900 hover:text-zinc-900 transition-colors"
+                    (click)="goToPage(currentPage() - 1)">‹</button>
                 <button
-                    class="pag-active w-8 h-8 border border-zinc-900 bg-zinc-900 text-white text-xs flex items-center justify-center">1</button>
+                    class="pag-active w-8 h-8 border border-zinc-900 bg-zinc-900 text-white text-xs flex items-center justify-center">{{ currentPage() }}</button>
                 <button
-                    class="pag-btn w-8 h-8 border border-zinc-200 text-zinc-500 text-xs flex items-center justify-center hover:border-zinc-900 hover:text-zinc-900 transition-colors">2</button>
-                <button
-                    class="pag-btn w-8 h-8 border border-zinc-200 text-zinc-500 text-xs flex items-center justify-center hover:border-zinc-900 hover:text-zinc-900 transition-colors">3</button>
-                <button
-                    class="pag-btn w-8 h-8 border border-zinc-200 text-zinc-400 text-xs flex items-center justify-center hover:border-zinc-900 hover:text-zinc-900 transition-colors">›</button>
+                    class="pag-btn w-8 h-8 border border-zinc-200 text-zinc-500 text-xs flex items-center justify-center hover:border-zinc-900 hover:text-zinc-900 transition-colors"
+                    (click)="goToPage(currentPage() + 1)" [disabled]="totalPages() && currentPage() >= totalPages()">›</button>
             </div>
         </div>
 
@@ -453,7 +453,7 @@
     @if (isEditUserModelOpen()) {
     <div id="editModal"
         class="fixed inset-0 z-50 modal-backdrop bg-black/30 flex items-end sm:items-center justify-center sm:px-4 p-4 sm:p-0">
-        <form (ngsub)="$event.preventDefault()"
+        <form [formGroup]="editForm" (ngSubmit)="onEditUser()" 
             class="modal-box bg-white border border-zinc-200 w-full sm:max-w-md shadow-2xl transition-colors duration-200 flex flex-col max-h-[90vh]">
 
             <div
@@ -478,27 +478,27 @@
                     <label
                         class="block text-xs tracking-widest uppercase t-label text-zinc-400 font-medium mb-2 transition-colors duration-200">User
                         ID</label>
-                    <input type="text" value="b2c3d4e5-f6a7-8901-bcde-f12345678901" disabled
+                    <input type="text" [formControl]="editForm.controls.id"
                         class="inp-disabled w-full border border-zinc-100 bg-zinc-50 px-4 py-2.5 text-sm text-zinc-400 font-mono cursor-not-allowed transition-colors duration-200" />
                 </div>
                 <div>
                     <label
                         class="block text-xs tracking-widest uppercase t-label text-zinc-400 font-medium mb-2 transition-colors duration-200">Username</label>
-                    <input type="text" value="eleanor.voss"
+                    <input type="text" formControlName="username"
                         class="inp w-full border border-zinc-200 px-4 py-2.5 text-sm text-zinc-800 bg-white focus:outline-none focus:border-zinc-900 transition-colors duration-150" />
                 </div>
                 <div>
                     <label
                         class="block text-xs tracking-widest uppercase t-label text-zinc-400 font-medium mb-2 transition-colors duration-200">Email
                         Address</label>
-                    <input type="email" value="eleanor.voss@lexfirm.com" disabled
+                    <input type="email" [formControl]="editForm.controls.email"
                         class="inp-disabled w-full border border-zinc-100 bg-zinc-50 px-4 py-2.5 text-sm text-zinc-400 cursor-not-allowed transition-colors duration-200" />
                 </div>
                 <div>
                     <label
                         class="block text-xs tracking-widest uppercase t-label text-zinc-400 font-medium mb-2 transition-colors duration-200">Role
                         <span class="text-red-400">*</span></label>
-                    <select
+                    <select formControlName="role"
                         class="inp w-full border border-zinc-200 pl-4 pr-9 py-2.5 text-sm text-zinc-700 bg-white focus:outline-none appearance-none transition-colors duration-200">
                         <option value="SENIOR">Senior</option>
                         <option value="JUNIOR" selected>Junior</option>
@@ -508,7 +508,7 @@
                     <label
                         class="block text-xs tracking-widest uppercase t-label text-zinc-400 font-medium mb-2 transition-colors duration-200">Assigned
                         Senior</label>
-                    <select
+                    <select formControlName="seniorId"
                         class="inp w-full border border-zinc-200 pl-4 pr-9 py-2.5 text-sm text-zinc-700 bg-white focus:outline-none appearance-none transition-colors duration-200">
                         <option value="a1b2c3d4-e5f6-7890-abcd-ef1234567890" selected>harrison.blake</option>
                         <option value="d4e5f6a7-b8c9-0123-defa-234567890123">sophia.wright</option>
@@ -518,7 +518,7 @@
                     <label
                         class="block text-xs tracking-widest uppercase t-label text-zinc-400 font-medium mb-2 transition-colors duration-200">Account
                         Status</label>
-                    <select
+                    <select formControlName="status"
                         class="inp w-full border border-zinc-200 pl-4 pr-9 py-2.5 text-sm text-zinc-700 bg-white focus:outline-none appearance-none transition-colors duration-200">
                         <option value="ACTIVE" selected>Active</option>
                         <option value="DISABLED">Disabled</option>
@@ -558,7 +558,7 @@
     @if (isDeactivateUserModelOpen()) {
     <div id="deactivateModal"
         class=" fixed inset-0 z-50 modal-backdrop bg-black/30 flex items-end sm:items-center justify-center sm:px-4 p-4 sm:p-0">
-        <form
+        <form [formGroup]="deactivateForm" (ngSubmit)="onDeactivateUser()"
             class="modal-box bg-white border border-zinc-200 w-full sm:max-w-sm shadow-2xl transition-colors duration-200 flex flex-col max-h-[90vh]">
             <div class="px-6 sm:px-7 pt-7 pb-6 overflow-y-auto">
                 <div
@@ -572,9 +572,9 @@
                 <h3 class="serif text-xl font-semibold t-head text-zinc-900 mb-2 transition-colors duration-200">
                     Deactivate User?</h3>
                 <p class="text-sm t-sub text-zinc-500 leading-relaxed transition-colors duration-200">
-                    <span class="font-medium t-head text-zinc-700 transition-colors duration-200">eleanor.voss</span>
+                    <span class="font-medium t-head text-zinc-700 transition-colors duration-200">{{ deactivateUserTarget?.username }}</span>
                     <span
-                        class="text-xs t-label text-zinc-400 ml-1 transition-colors duration-200">(eleanor.voss@lexfirm.com)</span>
+                        class="text-xs t-label text-zinc-400 ml-1 transition-colors duration-200">({{ deactivateUserTarget?.email }})</span>
                     will lose all system access immediately. All data will be preserved. This action is logged.
                 </p>
                 <div
@@ -588,7 +588,7 @@
                 class="modal-foot flex items-center gap-3 px-6 sm:px-7 py-5 border-t border-zinc-100 transition-colors duration-200 shrink-0">
                 <button type="button" (click)="closeDeactivateUserModel()"
                     class="btn-outline flex-1 border border-zinc-200 text-sm text-zinc-600 py-2.5 hover:border-zinc-900 hover:text-zinc-900 transition-colors">Cancel</button>
-                <button
+                <button type="submit"
                     class="flex-1 border border-red-300 text-red-600 text-sm py-2.5 hover:bg-red-50 transition-colors">Deactivate</button>
             </div>
         </form>
@@ -599,7 +599,7 @@
     @if (isDeleteUserModelOpen()) {
     <div id="deleteModal"
         class="fixed inset-0 z-50 modal-backdrop bg-black/30 flex items-end sm:items-center justify-center sm:px-4 p-4 sm:p-0">
-        <form
+        <form [formGroup]="deleteForm" (ngSubmit)="onDeleteUser()"
             class="modal-box bg-white border border-zinc-200 w-full sm:max-w-sm shadow-2xl transition-colors duration-200 flex flex-col max-h-[90vh]">
             <div class="px-6 sm:px-7 pt-7 pb-6 overflow-y-auto">
                 <div class="w-10 h-10 border border-red-200 bg-red-50 flex items-center justify-center mb-5">
@@ -612,7 +612,7 @@
                 <h3 class="serif text-xl font-semibold t-head text-zinc-900 mb-2 transition-colors duration-200">Delete
                     User Permanently?</h3>
                 <p class="text-sm t-sub text-zinc-500 leading-relaxed transition-colors duration-200">
-                    <span class="font-medium t-head text-zinc-700 transition-colors duration-200">eleanor.voss</span>
+                    <span class="font-medium t-head text-zinc-700 transition-colors duration-200">{{ deleteUserTarget?.username }}</span>
                     will be permanently removed. This action <span class="font-medium text-red-600">cannot be
                         undone</span>.
                 </p>
@@ -620,7 +620,7 @@
                     <label
                         class="block text-xs tracking-widest uppercase t-label text-zinc-400 font-medium mb-2 transition-colors duration-200">Type
                         username to confirm</label>
-                    <input type="text" placeholder="eleanor.voss"
+                    <input type="text" formControlName="usernameConfirm" [placeholder]="deleteUserTarget?.username || ''"
                         class="inp w-full border border-zinc-200 px-4 py-2.5 text-sm text-zinc-800 placeholder-zinc-400 bg-white focus:outline-none focus:border-red-400 transition-colors duration-150" />
                 </div>
             </div>
@@ -628,7 +628,7 @@
                 class="modal-foot flex items-center gap-3 px-6 sm:px-7 py-5 border-t border-zinc-100 transition-colors duration-200 shrink-0">
                 <button type="button" (click)="closeDeleteUserModel()"
                     class="btn-outline flex-1 border border-zinc-200 text-sm text-zinc-600 py-2.5 hover:border-zinc-900 hover:text-zinc-900 transition-colors">Cancel</button>
-                <button
+                <button type="submit"
                     class="flex-1 bg-red-600 border border-red-600 text-white text-sm py-2.5 hover:bg-red-700 transition-colors">Delete
                     Permanently</button>
             </div>
