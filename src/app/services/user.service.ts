@@ -16,7 +16,7 @@ export class UserService {
 
   getUsers(): Observable<ApiResponse<Page<User>>>{
     return this.http.get<ApiResponse<Page<User>>>(
-      `${this.baseUrl}?page=1&size=10&sort=createdAt&direction=asc`
+      `${this.baseUrl}?page=1&size=10&sort=created_at&direction=asc`
     );
   }
 
