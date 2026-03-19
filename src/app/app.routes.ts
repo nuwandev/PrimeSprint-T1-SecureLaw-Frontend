@@ -4,7 +4,6 @@ import { UserMgt } from './pages/admin/user-mgt/user-mgt';
 import { authGuard } from './guards/auth-guard';
 import { roleGuard } from './guards/role-guard';
 import { Chat } from './pages/chat/chat';
-
 export const routes: Routes = [
     {
         path: '',
@@ -27,10 +26,14 @@ export const routes: Routes = [
             }
         ]
     },
+        {
+        path: 'chat/:conversationId',   // ✅ fixed: was 'chat:/conversationId'
+        component: Chat,
+        canActivate: [authGuard]
+    },
     {
-        path: 'chat',
-        canActivate: [authGuard, roleGuard],
-        data: { roles: ['SENIOR', 'JUNIOR'] },
-        component: Chat
+        path: 'chat',                   // ✅ added: base /chat route without ID
+        component: Chat,
+        canActivate: [authGuard]
     }
 ];
