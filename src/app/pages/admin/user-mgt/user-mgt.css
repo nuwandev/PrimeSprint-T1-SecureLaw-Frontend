@@ -1,0 +1,334 @@
+ body {
+     font-family: 'DM Sans', sans-serif;
+ }
+
+ h1,
+ h2,
+ h3,
+ .serif {
+     font-family: 'Cormorant Garamond', serif;
+ }
+
+ .modal-backdrop {
+     backdrop-filter: blur(4px);
+ }
+
+ select {
+     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23a1a1aa' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+     background-repeat: no-repeat;
+     background-position: right .75rem center;
+     background-size: 1rem;
+ }
+
+ /* ── CSS-only dark mode ── */
+ #themeCheck {
+     display: none;
+ }
+
+ #themeCheck:not(:checked)~* .icon-sun {
+     display: none;
+ }
+
+ #themeCheck:not(:checked)~* .icon-moon {
+     display: block;
+ }
+
+ #themeCheck:checked~* .icon-moon {
+     display: none;
+ }
+
+ #themeCheck:checked~* .icon-sun {
+     display: block;
+ }
+
+ #themeCheck:checked~.page {
+     background-color: #09090b;
+     color: #f4f4f5;
+ }
+
+ #themeCheck:checked~.page .nav-el {
+     background: #09090b;
+     border-color: #27272a;
+ }
+
+ #themeCheck:checked~.page .logo-box {
+     background: #ffffff;
+ }
+
+ #themeCheck:checked~.page .logo-txt {
+     color: #18181b;
+ }
+
+ #themeCheck:checked~.page .t-head {
+     color: #f4f4f5;
+ }
+
+ #themeCheck:checked~.page .t-sub {
+     color: #a1a1aa;
+ }
+
+ #themeCheck:checked~.page .t-label {
+     color: #71717a;
+ }
+
+ #themeCheck:checked~.page .t-muted {
+     color: #52525b;
+ }
+
+ #themeCheck:checked~.page .t-mono {
+     color: #52525b;
+ }
+
+ #themeCheck:checked~.page .b-std {
+     border-color: #27272a;
+ }
+
+ #themeCheck:checked~.page .b-light {
+     border-color: #27272a;
+ }
+
+ #themeCheck:checked~.page .bg-page {
+     background: #09090b;
+ }
+
+ #themeCheck:checked~.page .bg-card {
+     background: #18181b;
+ }
+
+ #themeCheck:checked~.page .bg-row {
+     background: #09090b;
+ }
+
+ #themeCheck:checked~.page .bg-row:hover {
+     background: #18181b;
+ }
+
+ #themeCheck:checked~.page .bg-thead {
+     background: #18181b;
+ }
+
+ #themeCheck:checked~.page .stat-card {
+     background: #18181b;
+ }
+
+ #themeCheck:checked~.page .inp {
+     background: #18181b;
+     border-color: #3f3f46;
+     color: #f4f4f5;
+ }
+
+ #themeCheck:checked~.page .inp::placeholder {
+     color: #52525b;
+ }
+
+ #themeCheck:checked~.page .inp-disabled {
+     background: #27272a;
+     border-color: #27272a;
+     color: #52525b;
+ }
+
+ #themeCheck:checked~.page .btn-primary {
+     background: #ffffff;
+     color: #18181b;
+ }
+
+ #themeCheck:checked~.page .btn-primary:hover {
+     background: #e4e4e7;
+ }
+
+ #themeCheck:checked~.page .btn-outline {
+     border-color: #3f3f46;
+     color: #a1a1aa;
+ }
+
+ #themeCheck:checked~.page .btn-outline:hover {
+     border-color: #a1a1aa;
+     color: #f4f4f5;
+ }
+
+ #themeCheck:checked~.page .btn-edit {
+     border-color: #3f3f46;
+     color: #a1a1aa;
+ }
+
+ #themeCheck:checked~.page .btn-edit:hover {
+     border-color: #a1a1aa;
+     color: #f4f4f5;
+ }
+
+ #themeCheck:checked~.page .btn-deact {
+     border-color: #3f3f46;
+     color: #52525b;
+ }
+
+ #themeCheck:checked~.page .btn-deact:hover {
+     border-color: #f87171;
+     color: #f87171;
+ }
+
+ #themeCheck:checked~.page .btn-deact-d {
+     border-color: #27272a;
+     color: #3f3f46;
+ }
+
+ .btn-delete {
+     border: 1px solid #fecaca;
+     /* red-200 */
+     color: #dc2626;
+     /* red-600 */
+     background-color: #ffffff;
+     transition: all 0.2s ease;
+ }
+
+ /* Hover (light mode) */
+ .btn-delete:hover {
+     border-color: #ef4444;
+     /* red-500 */
+     color: #ffffff;
+     background-color: #ef4444;
+ }
+
+ /* Dark mode */
+ #themeCheck:checked~.page .btn-delete {
+     border-color: #7f1d1d;
+     /* dark red */
+     color: #f87171;
+     /* red-400 */
+     background-color: transparent;
+ }
+
+ /* Dark mode hover */
+ #themeCheck:checked~.page .btn-delete:hover {
+     border-color: #ef4444;
+     color: #ffffff;
+     background-color: #ef4444;
+ }
+
+ /* Disabled state */
+ .btn-delete:disabled {
+     opacity: 0.5;
+     cursor: not-allowed;
+ }
+
+ #themeCheck:checked~.page .pag-btn {
+     border-color: #3f3f46;
+     color: #71717a;
+ }
+
+ #themeCheck:checked~.page .pag-btn:hover {
+     border-color: #a1a1aa;
+     color: #f4f4f5;
+ }
+
+ #themeCheck:checked~.page .pag-active {
+     background: #ffffff;
+     color: #18181b;
+     border-color: #ffffff;
+ }
+
+ /* SENIOR = strong border (like old Admin); JUNIOR = muted (like old Lawyer/Staff) */
+ #themeCheck:checked~.page .badge-senior {
+     border-color: #d4d4d8;
+     color: #d4d4d8;
+ }
+
+ #themeCheck:checked~.page .badge-junior {
+     border-color: #71717a;
+     color: #a1a1aa;
+ }
+
+ /* audit */
+ #themeCheck:checked~.page .audit-tag-c {
+     border-color: #166534;
+     color: #86efac;
+ }
+
+ #themeCheck:checked~.page .audit-tag-d {
+     border-color: #3f3f46;
+     color: #a1a1aa;
+ }
+
+ #themeCheck:checked~.page .audit-tag-e {
+     border-color: #1e3a5f;
+     color: #93c5fd;
+ }
+
+ #themeCheck:checked~.page .timeline-line {
+     background: #27272a;
+ }
+
+ /* modals */
+ #themeCheck:checked~.page .modal-box {
+     background: #18181b;
+     border-color: #27272a;
+ }
+
+ #themeCheck:checked~.page .modal-head {
+     border-color: #27272a;
+ }
+
+ #themeCheck:checked~.page .modal-foot {
+     border-color: #27272a;
+ }
+
+ #themeCheck:checked~.page .modal-note {
+     border-color: #3f3f46;
+     color: #71717a;
+ }
+
+ #themeCheck:checked~.page .field-bg {
+     background: #27272a;
+     border-color: #3f3f46;
+ }
+
+ #themeCheck:checked~.page .field-label {
+     color: #71717a;
+ }
+
+ #themeCheck:checked~.page .field-val {
+     color: #f4f4f5;
+ }
+
+ #themeCheck:checked~.page .field-mono {
+     color: #a1a1aa;
+ }
+
+ /* warn callout */
+ #themeCheck:checked~.page .warn-callout {
+     background: #1c1400;
+     border-color: #78350f;
+ }
+
+ #themeCheck:checked~.page .warn-callout p {
+     color: #fcd34d;
+ }
+
+ /* theme toggle */
+ #themeCheck:checked~.page .theme-toggle {
+     background: #18181b;
+     border-color: #3f3f46;
+     color: #a1a1aa;
+ }
+
+ #themeCheck:checked~.page .theme-toggle:hover {
+     border-color: #a1a1aa;
+     color: #f4f4f5;
+ }
+
+ .uuid-cell {
+     max-width: 8rem;
+ }
+
+ ::-webkit-scrollbar {
+     width: 4px;
+     height: 4px;
+ }
+
+ ::-webkit-scrollbar-track {
+     background: transparent;
+ }
+
+ ::-webkit-scrollbar-thumb {
+     background: #e4e4e7;
+     border-radius: 2px;
+ }
