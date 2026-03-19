@@ -22,7 +22,6 @@
         New Chat
       </button>
     </div>
-
     <div class="flex-1 sidebar-scroll px-3 py-4 space-y-0.5">
       <p class="text-xs tracking-widest uppercase text-zinc-600 px-2 mb-3 font-medium">Recent</p>
       
@@ -120,6 +119,10 @@
 
     <div class="page-footer border-t border-s px-4 sm:px-6 lg:px-12 xl:px-20 py-4 shrink-0 transition-colors">
       <div class="bg-input border flex flex-col transition-colors">
+        <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8v8a5 5 0 1 0 10 0V6.5a3.5 3.5 0 1 0-7 0V15a2 2 0 0 0 4 0V8"/>
+</svg>
+  
         <textarea rows="3"
           [(ngModel)]="userInput"
           (keydown)="onKeyDown($event)"
