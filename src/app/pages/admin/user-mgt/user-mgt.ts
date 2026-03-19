@@ -10,6 +10,7 @@ import { User, UserCreateRequest, UserUpdateRequest } from '../../../models/user
   styleUrl: './user-mgt.css',
 })
 export class UserMgt implements OnInit {
+  private searchDebounceTimeout: any;
 
   private userService = inject(UserService);
   private fb = inject(FormBuilder);
@@ -54,10 +55,10 @@ export class UserMgt implements OnInit {
     });
   });
 
-  totalOnPage = computed(() => this.users().length);
-  activeOnPage = computed(() => this.users().filter(u => u.status === 'ACTIVE').length);
-  seniorOnPage = computed(() => this.users().filter(u => u.role === 'SENIOR').length);
-  disabledOnPage = computed(() => this.users().filter(u => u.status === 'DISABLED').length);
+  totalOnPage = computed(() => this.visibleUsers().length);
+  activeOnPage = computed(() => this.visibleUsers().filter(u => u.status === 'ACTIVE').length);
+  seniorOnPage = computed(() => this.visibleUsers().filter(u => u.role === 'SENIOR').length);
+  disabledOnPage = computed(() => this.visibleUsers().filter(u => u.status === 'DISABLED').length);
 
   createForm = this.fb.group({
     username: ['', [Validators.required]],
@@ -207,7 +208,7 @@ export class UserMgt implements OnInit {
       username: user.username,
       email: user.email,
       role: user.role,
-      seniorId: user.seniorId ?? '',
+      seniorId: user.seniorId ?? null,
       status: user.status,
     });
   }
@@ -220,7 +221,7 @@ export class UserMgt implements OnInit {
       username: '',
       email: '',
       role: 'JUNIOR',
-      seniorId: '',
+      seniorId: null,
       status: 'ACTIVE',
     });
   }
@@ -260,9 +261,12 @@ export class UserMgt implements OnInit {
   }
 
   onSearchChange(term: string) {
-    this.searchTerm.set(term);
-    this.currentPage.set(1);
-    this.loadUsers();
+    clearTimeout(this.searchDebounceTimeout);
+    this.searchDebounceTimeout = setTimeout(() => {
+      this.searchTerm.set(term);
+      this.currentPage.set(1);
+      this.loadUsers();
+    }, 300);
   }
 
   onRoleFilterChange(role: string) {
