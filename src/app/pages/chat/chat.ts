@@ -109,7 +109,7 @@ export class Chat implements OnInit, AfterViewChecked {
 
   mockAIResponse(text: string): string {
     const lower = text.toLowerCase();
-    if (lower.includes('hello')) return 'Helloawyer! How are you today?';
+    if (lower.includes('hello')) return 'Hello lawyer! How are you today?';
     const fallback = [
       'Interesting! Tell me more.',
       'Why do you think that?',
