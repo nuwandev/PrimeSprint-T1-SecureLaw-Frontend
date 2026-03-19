@@ -91,7 +91,7 @@ export class UserMgt implements OnInit {
     const page = this.currentPage();
     const size = this.pageSize();
 
-    this.userService.getUsers({ search, page, size, sort: 'username', direction: 'asc' }).subscribe({
+    this.userService.getUsers({ search, page, size, sort: 'created_at', direction: 'desc' }).subscribe({
       next: (res) => {
         console.log(res);
         const pageData = res.data;
