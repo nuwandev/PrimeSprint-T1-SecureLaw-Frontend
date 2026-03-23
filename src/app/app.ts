@@ -5,6 +5,7 @@ import { RouterOutlet } from '@angular/router';
 import { UserService } from './services/user.service';
 import { finalize } from 'rxjs';
 import { User } from './models/user';
+import { Theme } from './core/services/theme';
 
 @Component({
   selector: 'app-root',
@@ -17,12 +18,11 @@ export class App implements OnInit {
   users = signal<User[]>([]);
   loading = signal(false);
   errorMsg = signal('');
-  
-  
 
   constructor(
     private readonly healthService: HealthService,
-    private readonly userService: UserService
+    private readonly userService: UserService,
+    private readonly theme: Theme,
   ) {}
 
   ngOnInit(): void {
