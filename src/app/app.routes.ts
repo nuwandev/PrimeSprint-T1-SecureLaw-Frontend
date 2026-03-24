@@ -27,9 +27,11 @@ export const routes: Routes = [
         ]
     },
     {
+    
         path: 'chat/:conversationId',
         canActivate: [authGuard, roleGuard],
         data: { roles: ['SENIOR', 'JUNIOR'] },
         component: Chat
     }
+    
 ];
