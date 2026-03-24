@@ -41,7 +41,7 @@ export class Login {
       if (res.role === 'SENIOR') {
         this.router.navigate(['/admin/user-management']);
       } else {
-        this.router.navigate(['/chat']);
+        this.router.navigate(['/chat/' + Math.random().toString(36).substring(2, 10)]);
       }
     });
   }
