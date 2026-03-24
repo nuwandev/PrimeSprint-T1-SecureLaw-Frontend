@@ -1,0 +1,78 @@
+body { font-family: 'DM Sans', sans-serif; }
+    h1,h2,h3,.serif { font-family: 'Cormorant Garamond', serif; }
+    .modal-backdrop { backdrop-filter: blur(4px); }
+
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23a1a1aa' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right .75rem center; background-size: 1rem;
+    }
+
+    /* ══ CSS-ONLY DARK MODE — identical token system ══ */
+    #themeCheck { display: none; }
+
+    #themeCheck:not(:checked) ~ * .icon-sun  { display: none; }
+    #themeCheck:not(:checked) ~ * .icon-moon { display: block; }
+    #themeCheck:checked ~ * .icon-moon { display: none; }
+    #themeCheck:checked ~ * .icon-sun  { display: block; }
+
+    #themeCheck:checked ~ .page                    { background-color: #09090b; color: #f4f4f5; }
+    #themeCheck:checked ~ .page .nav-el            { background: #09090b; border-color: #27272a; }
+    #themeCheck:checked ~ .page .logo-box          { background: #ffffff; }
+    #themeCheck:checked ~ .page .logo-txt          { color: #18181b; }
+    #themeCheck:checked ~ .page .t-head            { color: #f4f4f5; }
+    #themeCheck:checked ~ .page .t-sub             { color: #a1a1aa; }
+    #themeCheck:checked ~ .page .t-label           { color: #71717a; }
+    #themeCheck:checked ~ .page .t-muted           { color: #52525b; }
+    #themeCheck:checked ~ .page .t-mono            { color: #52525b; }
+    #themeCheck:checked ~ .page .b-std             { border-color: #27272a; }
+    #themeCheck:checked ~ .page .b-light           { border-color: #27272a; }
+    #themeCheck:checked ~ .page .bg-page           { background: #09090b; }
+    #themeCheck:checked ~ .page .bg-card           { background: #18181b; }
+    #themeCheck:checked ~ .page .bg-row            { background: #09090b; }
+    #themeCheck:checked ~ .page .bg-row:hover      { background: #18181b; }
+    #themeCheck:checked ~ .page .bg-thead          { background: #18181b; }
+    #themeCheck:checked ~ .page .stat-card         { background: #18181b; }
+    #themeCheck:checked ~ .page .inp               { background: #18181b; border-color: #3f3f46; color: #f4f4f5; }
+    #themeCheck:checked ~ .page .inp::placeholder  { color: #52525b; }
+    #themeCheck:checked ~ .page .btn-outline        { border-color: #3f3f46; color: #a1a1aa; }
+    #themeCheck:checked ~ .page .btn-outline:hover  { border-color: #a1a1aa; color: #f4f4f5; }
+    #themeCheck:checked ~ .page .btn-view           { border-color: #3f3f46; color: #71717a; }
+    #themeCheck:checked ~ .page .btn-view:hover     { border-color: #a1a1aa; color: #f4f4f5; }
+    #themeCheck:checked ~ .page .pag-btn            { border-color: #3f3f46; color: #71717a; }
+    #themeCheck:checked ~ .page .pag-btn:hover      { border-color: #a1a1aa; color: #f4f4f5; }
+    #themeCheck:checked ~ .page .pag-active         { background: #ffffff; color: #18181b; border-color: #ffffff; }
+    /* action badge */
+    #themeCheck:checked ~ .page .action-badge       { background: #27272a; color: #a1a1aa; }
+    /* action-specific colour chips */
+    #themeCheck:checked ~ .page .act-ai             { background: #1e3a5f; color: #93c5fd; }
+    #themeCheck:checked ~ .page .act-doc            { background: #1c3a2e; color: #6ee7b7; }
+    #themeCheck:checked ~ .page .act-login          { background: #27272a; color: #a1a1aa; }
+    #themeCheck:checked ~ .page .act-user           { background: #2d2217; color: #fbbf24; }
+    /* security badge */
+    #themeCheck:checked ~ .page .sec-badge          { background: #18181b; border-color: #3f3f46; }
+    #themeCheck:checked ~ .page .sec-badge-t        { color: #a1a1aa; }
+    /* modals */
+    #themeCheck:checked ~ .page .modal-box          { background: #18181b; border-color: #27272a; }
+    #themeCheck:checked ~ .page .modal-head         { border-color: #27272a; }
+    #themeCheck:checked ~ .page .modal-foot         { border-color: #27272a; }
+    #themeCheck:checked ~ .page .field-bg           { background: #27272a; border-color: #3f3f46; }
+    #themeCheck:checked ~ .page .field-label        { color: #71717a; }
+    #themeCheck:checked ~ .page .field-val          { color: #f4f4f5; }
+    #themeCheck:checked ~ .page .field-mono         { color: #a1a1aa; }
+    #themeCheck:checked ~ .page .field-dim          { color: #52525b; }
+    #themeCheck:checked ~ .page .modal-note         { border-color: #3f3f46; color: #71717a; }
+    #themeCheck:checked ~ .page .inline-code        { background: #3f3f46; color: #d4d4d8; }
+    #themeCheck:checked ~ .page .json-box           { background: #0d0d0f; border-color: #27272a; color: #a1a1aa; }
+    #themeCheck:checked ~ .page .theme-toggle       { background: #18181b; border-color: #3f3f46; color: #a1a1aa; }
+    #themeCheck:checked ~ .page .theme-toggle:hover { border-color: #a1a1aa; color: #f4f4f5; }
+
+    /* mask count pills */
+    .mask-pill { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 2px 8px; border-radius: 0; font-family: monospace; }
+    #themeCheck:checked ~ .page .mask-pill { background: #27272a; color: #a1a1aa; }
+
+    /* JSON box */
+    .json-box { font-family: 'DM Mono', 'Fira Mono', monospace; font-size: 11.5px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; }
+
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #e4e4e7; border-radius: 2px; }
