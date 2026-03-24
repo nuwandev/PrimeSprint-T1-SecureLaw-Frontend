@@ -1,45 +1,5 @@
-<input type="checkbox" id="themeCheck" />
-
 <div class="page bg-page bg-white text-zinc-900 min-h-screen transition-colors duration-200">
-
-  <!-- ══ NAV ══ -->
-  <nav
-    class="nav-el border-b b-std border-zinc-200 px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between bg-white transition-colors duration-200">
-    <div class="flex items-center gap-2 sm:gap-3 min-w-0">
-      <div
-        class="logo-box w-7 h-7 bg-zinc-900 flex items-center justify-center shrink-0 transition-colors duration-200">
-        <span class="logo-txt text-white text-xs font-bold tracking-widest transition-colors duration-200">L</span>
-      </div>
-      <span
-        class="serif text-lg sm:text-xl font-semibold tracking-wide t-head text-zinc-900 transition-colors duration-200">LexAdmin</span>
-      <span class="text-zinc-300 mx-1 sm:mx-2 hidden sm:inline">|</span>
-      <span
-        class="text-xs t-label text-zinc-400 tracking-widest uppercase font-medium hidden sm:inline transition-colors duration-200">Firm
-        Management Console</span>
-    </div>
-    <div class="flex items-center gap-2 sm:gap-3">
-      <div class="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center shrink-0">
-        <span class="text-white text-xs font-medium">AD</span>
-      </div>
-      <div class="text-right hidden sm:block">
-        <p class="text-xs font-medium t-head text-zinc-800 transition-colors duration-200">Admin User</p>
-        <p class="text-xs t-label text-zinc-400 transition-colors duration-200">admin@lexfirm.com</p>
-      </div>
-      <label for="themeCheck"
-        class="theme-toggle border border-zinc-200 bg-white w-9 h-9 flex items-center justify-center cursor-pointer text-zinc-500 hover:border-zinc-900 hover:text-zinc-900 transition-colors duration-200 shrink-0"
-        title="Toggle theme">
-        <svg class="icon-moon w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round"
-            d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
-        </svg>
-        <svg class="icon-sun w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="4" />
-          <path stroke-linecap="round"
-            d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M18.66 5.34l-1.41 1.41" />
-        </svg>
-      </label>
-    </div>
-  </nav>
+  <app-nav-bar [attr.data-page]="'audit-logs'"></app-nav-bar>
 
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
 
@@ -93,7 +53,7 @@
          Wide table — horizontally scrollable on smaller screens.
     ══ -->
     <div class="b-std border border-zinc-200 md:block overflow-x-auto transition-colors duration-200">
-      <table class="w-full text-sm min-w-[1100px]">
+      <table class="w-full text-sm min-w-275">
         <thead>
           <tr class="bg-thead bg-zinc-50 border-b b-std border-zinc-200 transition-colors duration-200">
             <!-- audit_log.timestamp (TIMESTAMP, idx_audit_timestamp) -->
@@ -608,8 +568,8 @@
        Populated dynamically by openLogModal() via data-* attrs.
        Angular: replace JS bridge with component @Input binding.
   ══════════════════════════════════════════════════════ -->
-  <div id="detailModal"
-    class="hidden fixed inset-0 z-50 modal-backdrop bg-black/30 flex items-end sm:items-center justify-center sm:px-4">
+  <div id="detailModal" hidden
+    class="fixed inset-0 z-50 modal-backdrop bg-black/30 flex items-end sm:items-center justify-center sm:px-4">
     <div
       class="modal-box bg-white border border-zinc-200 w-full sm:max-w-2xl shadow-2xl transition-colors duration-200 max-h-[90vh] flex flex-col">
 
@@ -623,7 +583,7 @@
           <h3 class="serif text-xl font-semibold t-head text-zinc-900 transition-colors duration-200">Audit Log Record
           </h3>
         </div>
-        <button onclick="document.getElementById('detailModal').classList.add('hidden')"
+        <button onclick="document.getElementById('detailModal').hidden = true"
           class="t-label text-zinc-400 hover:text-zinc-900 p-1 transition-colors">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -748,7 +708,7 @@
       <!-- Footer -->
       <div
         class="modal-foot flex justify-end px-6 sm:px-7 py-5 border-t border-zinc-100 transition-colors duration-200 shrink-0">
-        <button onclick="document.getElementById('detailModal').classList.add('hidden')"
+        <button onclick="document.getElementById('detailModal').hidden = true"
           class="btn-outline border border-zinc-200 text-sm text-zinc-600 px-6 py-2.5 hover:border-zinc-900 hover:text-zinc-900 transition-colors">Close</button>
       </div>
     </div>

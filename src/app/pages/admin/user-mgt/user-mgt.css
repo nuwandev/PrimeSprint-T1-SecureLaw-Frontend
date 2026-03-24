@@ -1,0 +1,82 @@
+.modal-backdrop {
+  backdrop-filter: blur(4px);
+}
+
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23a1a1aa' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+}
+
+.btn-delete {
+  border: 1px solid #fecaca;
+  /* red-200 */
+  color: #dc2626;
+  /* red-600 */
+  background-color: #ffffff;
+  transition: all 0.2s ease;
+}
+
+/* Hover (light mode) */
+.btn-delete:hover {
+  border-color: #dc2626;
+  /* red-600 */
+  color: #ffffff;
+  background-color: #dc2626;
+}
+
+/* Dark mode */
+/* Dark theme variants live in global styles (src/styles.css) */
+
+/* Disabled state */
+.btn-delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.uuid-cell {
+  max-width: 8rem;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #e4e4e7;
+  border-radius: 2px;
+}
+
+.users-overlay {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(2px);
+}
+
+:host-context(html[data-theme='dark']) .users-overlay {
+  background: rgba(9, 9, 11, 0.72);
+}
+
+:host-context(html[data-theme='dark']) .user-load-error {
+  background: #1b0b0b;
+  border-color: #7f1d1d;
+}
+
+:host-context(html[data-theme='dark']) .user-load-error p {
+  color: #fecaca;
+}
+
+:host-context(html[data-theme='dark']) .user-load-error__retry {
+  border-color: #7f1d1d;
+  color: #fecaca;
+}
+
+:host-context(html[data-theme='dark']) .user-load-error__retry:hover {
+  background: #2a0f0f;
+  border-color: #991b1b;
+}
