@@ -47,7 +47,15 @@ export class Chat implements OnInit, AfterViewChecked {
       this.shouldScroll = false;
     }
   }
+selectedFile: File | null = null;
 
+onFileSelected(event: any) {
+  const file = event.target.files[0];
+  if (file) {
+    this.selectedFile = file;
+    console.log('Selected file:', file.name);
+  }
+}
   startNewConversation(): void {
     if (this.conversationId && this.messages.length > 0) {
       this.allConversations.set(this.conversationId, [...this.messages]);
@@ -140,4 +148,5 @@ export class Chat implements OnInit, AfterViewChecked {
   private getTime(): string {
     return new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
   }
+  
 }
