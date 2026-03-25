@@ -13,11 +13,12 @@ import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { finalize, startWith } from 'rxjs';
 import { NavBar } from '../../../components/nav-bar/nav-bar';
+import { NgClass } from '@angular/common';
 
 type RoleValue = 'SENIOR' | 'JUNIOR' | '';
 @Component({
   selector: 'app-user-mgt',
-  imports: [ReactiveFormsModule, NavBar],
+  imports: [ReactiveFormsModule, NavBar, NgClass],
   templateUrl: './user-mgt.html',
   styleUrl: './user-mgt.css',
 })
@@ -660,4 +661,15 @@ export class UserMgt implements OnInit {
     this.currentPage.set(page);
     this.loadUsers();
   }
+
+  statusConfig: Record<string, { text: string; dot: string }> = {
+    ACTIVE: {
+      text: 'text-emerald-700',
+      dot: 'bg-emerald-500'
+    },
+    DISABLED: {
+      text: 'text-red-700',
+      dot: 'bg-red-500'
+    }
+  };
 }
