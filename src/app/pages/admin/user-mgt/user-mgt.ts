@@ -627,9 +627,12 @@ export class UserMgt implements OnInit {
   }
 
   onSearchChange(term: string) {
-    this.searchTerm.set(term);
-    this.currentPage.set(1);
-    this.loadUsers();
+    // Ensure the search term updates correctly without interference
+    if (this.searchTerm() !== term) {
+      this.searchTerm.set(term);
+      this.currentPage.set(1);
+      this.loadUsers();
+    }
   }
 
   onRoleFilterChange(role: string) {
