@@ -9,6 +9,8 @@ import {
 } from '@angular/forms';
 import { User, UserCreateRequest, UserUpdateRequest } from '../../../models/user';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { finalize, startWith } from 'rxjs';
 import { NavBar } from '../../../components/nav-bar/nav-bar';
 
@@ -44,6 +46,8 @@ export class UserMgt implements OnInit {
 
   deleteSubmitting = signal(false);
   deleteError = signal('');
+
+  searchSubject = new Subject<string>();
 
   private getApiErrorMessage(err: unknown, fallback: string): string {
     if (!err || typeof err !== 'object') {
@@ -112,6 +116,17 @@ export class UserMgt implements OnInit {
 
     this.loadUsers();
     this.loadSeniorOptions();
+
+    this.searchSubject
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+      )
+      .subscribe((term) => {
+        this.searchTerm.set(term);
+        this.currentPage.set(1);
+        this.loadUsers();
+      });
   }
 
   isCreateUserModelOpen = signal(false);
@@ -627,12 +642,7 @@ export class UserMgt implements OnInit {
   }
 
   onSearchChange(term: string) {
-    // Ensure the search term updates correctly without interference
-    if (this.searchTerm() !== term) {
-      this.searchTerm.set(term);
-      this.currentPage.set(1);
-      this.loadUsers();
-    }
+    this.searchSubject.next(term);
   }
 
   onRoleFilterChange(role: string) {
