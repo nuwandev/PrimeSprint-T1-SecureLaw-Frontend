@@ -1,3 +1,265 @@
 /* You can add global styles to this file, and also import other style files */
 
-@import "tailwindcss";
+@import 'tailwindcss';
+
+/* Shared typography helpers used across pages/components */
+body {
+  font-family: 'DM Sans', sans-serif;
+}
+
+h1,
+h2,
+h3,
+.serif {
+  font-family: 'Cormorant Garamond', serif;
+}
+
+/* Theme system: controlled by `Theme` service via <html data-theme="..."> */
+html[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* Navbar theme tokens (used by NavBar component for consistent hover/active) */
+  --nav-bg: #09090b;
+  --nav-dd-bg: #0f0f12;
+  --nav-border: #27272a;
+  --nav-text: #f4f4f5;
+  --nav-muted: #a1a1aa;
+  --nav-soft: #71717a;
+  --nav-hover: #18181b;
+  --nav-active: #27272a;
+  --nav-active-border: #ffffff;
+  --nav-danger: #f87171;
+  --nav-danger-hover-bg: #7f1d1d;
+  --nav-danger-hover-text: #ffffff;
+  --nav-logo-bg: #ffffff;
+  --nav-logo-fg: #18181b;
+}
+
+html[data-theme='light'] {
+  color-scheme: light;
+
+  /* Navbar theme tokens (used by NavBar component for consistent hover/active) */
+  --nav-bg: #ffffff;
+  --nav-dd-bg: #ffffff;
+  --nav-border: #e4e4e7;
+  --nav-text: #18181b;
+  --nav-muted: #71717a;
+  --nav-soft: #a1a1aa;
+  --nav-hover: #f4f4f5;
+  --nav-active: #e4e4e7;
+  --nav-active-border: #18181b;
+  --nav-danger: #dc2626;
+  --nav-danger-hover-bg: #fef2f2;
+  --nav-danger-hover-text: #b91c1c;
+  --nav-logo-bg: #18181b;
+  --nav-logo-fg: #ffffff;
+}
+
+html[data-theme='dark'] .page {
+  background-color: #09090b;
+  color: #f4f4f5;
+}
+
+html[data-theme='dark'] .page .nav-el {
+  background: #09090b;
+  border-color: #27272a;
+}
+
+html[data-theme='dark'] .page .t-head {
+  color: #f4f4f5;
+}
+
+html[data-theme='dark'] .page .t-sub {
+  color: #a1a1aa;
+}
+
+html[data-theme='dark'] .page .t-label {
+  color: #71717a;
+}
+
+html[data-theme='dark'] .page .t-muted {
+  color: #52525b;
+}
+
+html[data-theme='dark'] .page .b-std {
+  border-color: #27272a;
+}
+
+html[data-theme='dark'] .page .bg-thead {
+  background: #18181b;
+}
+
+html[data-theme='dark'] .page .bg-row:hover {
+  background: #18181b;
+}
+
+html[data-theme='dark'] .page .inp {
+  background: #18181b;
+  border-color: #3f3f46;
+  color: #f4f4f5;
+}
+
+html[data-theme='dark'] .page .inp::placeholder {
+  color: #52525b;
+}
+
+/* Dark theme: improve readability for common Tailwind utility colors used across pages */
+html[data-theme='dark'] .page .bg-white,
+html[data-theme='dark'] .page .bg-zinc-50 {
+  background-color: #18181b;
+}
+
+html[data-theme='dark'] .page .border-zinc-100,
+html[data-theme='dark'] .page .border-zinc-200 {
+  border-color: #27272a;
+}
+
+html[data-theme='dark'] .page .text-zinc-900,
+html[data-theme='dark'] .page .text-zinc-800,
+html[data-theme='dark'] .page .text-zinc-700 {
+  color: #f4f4f5;
+}
+
+html[data-theme='dark'] .page .text-zinc-600,
+html[data-theme='dark'] .page .text-zinc-500 {
+  color: #a1a1aa;
+}
+
+html[data-theme='dark'] .page .text-zinc-400 {
+  color: #71717a;
+}
+
+/* Dark theme: shared classes used in admin pages */
+html[data-theme='dark'] .page .btn-primary {
+  background: #ffffff;
+  color: #18181b;
+}
+
+html[data-theme='dark'] .page .btn-primary:hover {
+  background: #e4e4e7;
+}
+
+html[data-theme='dark'] .page .btn-outline,
+html[data-theme='dark'] .page .btn-edit {
+  border-color: #3f3f46;
+  color: #a1a1aa;
+}
+
+html[data-theme='dark'] .page .btn-outline:hover,
+html[data-theme='dark'] .page .btn-edit:hover {
+  border-color: #a1a1aa;
+  color: #f4f4f5;
+}
+
+html[data-theme='dark'] .page .btn-deact {
+  border-color: #3f3f46;
+  color: #71717a;
+}
+
+html[data-theme='dark'] .page .btn-deact:hover {
+  border-color: #f87171;
+  color: #f87171;
+}
+
+html[data-theme='dark'] .page .btn-deact-d {
+  border-color: #27272a;
+  color: #3f3f46;
+}
+
+html[data-theme='dark'] .page .btn-delete {
+  border-color: #7f1d1d;
+  color: #f87171;
+  background-color: transparent;
+}
+
+html[data-theme='dark'] .page .btn-delete:hover {
+  border-color: #dc2626;
+  color: #ffffff;
+  background-color: #dc2626;
+}
+
+html[data-theme='dark'] .page .pag-btn {
+  border-color: #3f3f46;
+  color: #71717a;
+}
+
+html[data-theme='dark'] .page .pag-btn:hover {
+  border-color: #a1a1aa;
+  color: #f4f4f5;
+}
+
+html[data-theme='dark'] .page .pag-active {
+  background: #ffffff;
+  color: #18181b;
+  border-color: #ffffff;
+}
+
+html[data-theme='dark'] .page .badge-senior {
+  border-color: #d4d4d8;
+  color: #d4d4d8;
+}
+
+html[data-theme='dark'] .page .badge-junior {
+  border-color: #71717a;
+  color: #a1a1aa;
+}
+
+html[data-theme='dark'] .page .audit-tag-c {
+  border-color: #166534;
+  color: #86efac;
+}
+
+html[data-theme='dark'] .page .audit-tag-d {
+  border-color: #3f3f46;
+  color: #a1a1aa;
+}
+
+html[data-theme='dark'] .page .audit-tag-e {
+  border-color: #1e3a5f;
+  color: #93c5fd;
+}
+
+html[data-theme='dark'] .page .timeline-line {
+  background: #27272a;
+}
+
+html[data-theme='dark'] .page .modal-box {
+  background: #18181b;
+  border-color: #27272a;
+}
+
+html[data-theme='dark'] .page .modal-head,
+html[data-theme='dark'] .page .modal-foot {
+  border-color: #27272a;
+}
+
+html[data-theme='dark'] .page .modal-note {
+  border-color: #3f3f46;
+  color: #a1a1aa;
+}
+
+html[data-theme='dark'] .page .field-bg {
+  background: #27272a;
+  border-color: #3f3f46;
+}
+
+html[data-theme='dark'] .page .field-label {
+  color: #a1a1aa;
+}
+
+html[data-theme='dark'] .page .field-val {
+  color: #f4f4f5;
+}
+
+html[data-theme='dark'] .page .field-mono {
+  color: #a1a1aa;
+}
+
+html[data-theme='dark'] .page .warn-callout {
+  background: #1c1400;
+  border-color: #78350f;
+}
+
+html[data-theme='dark'] .page .warn-callout p {
+  color: #fcd34d;
+}
