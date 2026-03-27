@@ -1,0 +1,41 @@
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs/internal/Observable';
+
+export enum ActionType {
+  USER_CREATED = 'USER_CREATED',
+  USER_UPDATED = 'USER_UPDATED',
+  USER_DEACTIVATED = 'USER_DEACTIVATED',
+  AI_REQUEST = 'AI_REQUEST',
+  ROLE_CHANGED = 'ROLE_CHANGED',
+  LOGIN = 'LOGIN',
+  TEMPLATE_UPDATED = 'TEMPLATE_UPDATED',
+  TEST_ACTION = 'TEST_ACTION'
+}
+
+export interface AuditLog {
+  id: string;
+  userId: string;
+  timestamp: string; 
+  target: string;
+  action: ActionType; //or string
+  templateId: string;
+  maskCounts: { [key: string]: number };
+  modelUsed: string;
+  responseTime: number;
+  details: string;
+}
+
+@Injectable({
+  providedIn: 'root',
+})
+export class AuditLogService {
+
+  private apiUrl = 'http://localhost:8080/audit/get-all'; 
+  
+  constructor(private http: HttpClient) {}
+
+  getAuditLogs(): Observable<AuditLog[]> {
+    return this.http.get<AuditLog[]>(this.apiUrl);
+  }
+}
