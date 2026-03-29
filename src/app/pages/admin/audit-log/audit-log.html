@@ -48,6 +48,87 @@
       </div>
     </div>
 
+    <!-- == PII Chart == -->
+    <div class="b-std border border-zinc-200 bg-white px-4 py-4 mb-6 transition-colors duration-200">
+
+      <!-- Header -->
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xs t-label text-zinc-400 tracking-widest uppercase font-medium">
+          PII Activity
+        </h3>
+
+        <!-- Optional: small meta -->
+        <span class="text-xs text-zinc-400">
+          Daily Count
+        </span>
+      </div>
+
+      <!-- Chart -->
+      <div class="relative h-[280px]">
+        <canvas id="piiChart"></canvas>
+      </div>
+
+    </div>
+
+    <!-- ══ FILTER BAR ══ -->
+    <div class="b-std border border-zinc-200 bg-white px-4 py-4 mb-6 transition-colors duration-200">
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+
+        <!-- User -->
+        <div class="flex flex-col">
+          <label class="text-xs t-label text-zinc-400 tracking-widest uppercase font-medium mb-1">
+            User ID
+          </label>
+          <input
+            type="text"
+            [(ngModel)]="filters.userId"
+            (keyup.enter)="applyFilters()"
+            class="h-10 border border-zinc-200 px-3 text-sm rounded-md focus:outline-none focus:border-zinc-900 transition-colors"
+          />
+        </div>
+
+        <!-- From -->
+        <div class="flex flex-col">
+          <label class="text-xs t-label text-zinc-400 tracking-widest uppercase font-medium mb-1">
+            From Date
+          </label>
+          <input
+            type="date"
+            [(ngModel)]="filters.fromDate"
+            class="h-10 border border-zinc-200 px-3 text-sm rounded-md focus:outline-none focus:border-zinc-900 transition-colors"
+          />
+        </div>
+
+        <!-- To -->
+        <div class="flex flex-col">
+          <label class="text-xs t-label text-zinc-400 tracking-widest uppercase font-medium mb-1">
+            To Date
+          </label>
+          <input
+            type="date"
+            [(ngModel)]="filters.toDate"
+            class="h-10 border border-zinc-200 px-3 text-sm rounded-md focus:outline-none focus:border-zinc-900 transition-colors"
+          />
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex gap-2">
+          <button
+            (click)="applyFilters()"
+            class="h-10 flex-1 border border-zinc-900 bg-zinc-900 text-white text-sm px-4 hover:bg-black transition-colors">
+            Apply
+          </button>
+
+          <button
+            (click)="resetFilters()"
+            class="h-10 flex-1 border border-zinc-200 text-zinc-600 text-sm px-4 hover:border-zinc-900 hover:text-zinc-900 transition-colors">
+            Reset
+          </button>
+        </div>
+
+      </div>
+    </div>
+
     <!-- ══ DESKTOP TABLE ══
          Columns map 1-to-1 to audit_log table columns.
          Wide table — horizontally scrollable on smaller screens.
@@ -154,9 +235,11 @@
     </div>
 
     @if(!loading && auditLogs.length === 0){
-    <div>
-      No audit logs found
-    </div>
+    <p class="text-sm text-zinc-500">
+      {{ filters.userId || filters.fromDate || filters.toDate 
+          ? 'No results match your filters' 
+          : 'No audit logs available' }}
+    </p>
     }
 
 

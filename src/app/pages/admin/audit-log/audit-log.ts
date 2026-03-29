@@ -3,15 +3,22 @@ import { NavBar } from '../../../components/nav-bar/nav-bar';
 import { AuditLogService} from '../../../services/audit-log';
 import { AuditLog } from '../../../models/audit-log';
 import { DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 
 @Component({
   selector: 'app-audit-log',
-  imports: [NavBar, DatePipe],
+  imports: [NavBar, DatePipe, FormsModule],
   templateUrl: './audit-log.html',
   styleUrl: './audit-log.css',
 })
 export class AuditLogComponent implements OnInit {
+
+  filters = {
+    userId: '',
+    fromDate: '',
+    toDate: ''
+  };
 
   auditLogs: AuditLog[] = [];
   loading = false;
@@ -69,6 +76,71 @@ export class AuditLogComponent implements OnInit {
       }
     });
   }
+
+  // MAIN FILTER FUNCTION
+  applyFilters() {
+    const { userId, fromDate, toDate } = this.filters;
+
+    this.loading = true;
+
+    // CASE 1: userId + date range
+    if (userId && fromDate && toDate) {
+      this.auditLogService.getByDateAndUser(userId, fromDate, toDate)
+        .subscribe({
+          next: (res) => {
+            this.auditLogs = res;
+            this.loading = false;
+          },
+          error: () => this.loading = false
+        });
+    }
+
+    // CASE 2: only userId
+    else if (userId) {
+      this.auditLogService.getByUserId(userId)
+        .subscribe({
+          next: (res) => {
+            this.auditLogs = res;
+            this.loading = false;
+          },
+          error: () => this.loading = false
+        });
+    }
+
+    // CASE 3: only date range
+    else if (fromDate && toDate) {
+      this.auditLogService.getByDate(fromDate, toDate)
+        .subscribe({
+          next: (res) => {
+            this.auditLogs = res;
+            this.loading = false;
+          },
+          error: () => this.loading = false
+        });
+    }
+
+    // CASE 4: no filters
+    else {
+      this.loadAuditLogs();
+    }
+  }
+
+  // RESET
+  resetFilters() {
+    this.filters = {
+      userId: '',
+      fromDate: '',
+      toDate: ''
+    };
+
+    this.loadAuditLogs();
+  }
+
+
+
+
+
+  
 
 }
 

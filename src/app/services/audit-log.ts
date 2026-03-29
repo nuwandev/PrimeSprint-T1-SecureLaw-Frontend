@@ -18,20 +18,36 @@ export enum ActionType {
   providedIn: 'root',
 })
 export class AuditLogService {
-
-  private apiUrl = 'http://localhost:8080/audit/get-all'; 
   
   constructor(private http: HttpClient) {}
 
   getAuditLogs(): Observable<AuditLog[]> {
-    return this.http.get<AuditLog[]>(this.apiUrl);
+    return this.http.get<AuditLog[]>('http://localhost:8080/audit/get-all');
   }
 
   exportLogs() {
-  return this.http.get('http://localhost:8080/audit/export-all-audit-logs-csv', {
-    responseType: 'blob' // 👈 VERY IMPORTANT
-  });
-}
+    return this.http.get('http://localhost:8080/audit/export-all-audit-logs-csv', {
+      responseType: 'blob' // 👈 VERY IMPORTANT
+    });
+  }
+
+  getByUserId(userId: string) {
+    return this.http.get<any[]>(`/audit/search-by-userId/${userId}`);
+  }
+
+  getByDate(fromDate: string, toDate: string) {
+    return this.http.get<any[]>(
+      `/audit/get-audit-by-date`,
+      { params: { fromDate, toDate } }
+    );
+  }
+
+  getByDateAndUser(userId: string, fromDate: string, toDate: string) {
+    return this.http.get<any[]>(
+      `/audit/get-audit-by-date-and-userId`,
+      { params: { userId, fromDate, toDate } }
+    );
+  }
 }
 
 
