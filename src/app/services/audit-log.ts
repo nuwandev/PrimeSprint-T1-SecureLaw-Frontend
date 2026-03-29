@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs/internal/Observable';
+import { AuditLog } from '../models/audit-log';
 
 export enum ActionType {
   USER_CREATED = 'USER_CREATED',
@@ -11,19 +12,6 @@ export enum ActionType {
   LOGIN = 'LOGIN',
   TEMPLATE_UPDATED = 'TEMPLATE_UPDATED',
   TEST_ACTION = 'TEST_ACTION'
-}
-
-export interface AuditLog {
-  id: string;
-  userId: string;
-  timestamp: string; 
-  target: string;
-  action: ActionType; //or string
-  templateId: string;
-  maskCounts: { [key: string]: number };
-  modelUsed: string;
-  responseTime: number;
-  details: string;
 }
 
 @Injectable({
@@ -39,3 +27,5 @@ export class AuditLogService {
     return this.http.get<AuditLog[]>(this.apiUrl);
   }
 }
+
+

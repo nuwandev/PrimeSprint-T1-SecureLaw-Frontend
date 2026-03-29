@@ -92,51 +92,57 @@
         </thead>
         <tbody>
 
-          <!-- ─── ROW 1: AI_QUERY ─── -->
-          <tr
+          <!-- ─── ROW  ─── -->
+          
+          @for (log of auditLogs; track $index) {
+
+            <tr
             class="bg-row bg-white border-b b-light border-zinc-100 hover:bg-zinc-50 transition-colors duration-150 cursor-default"
             data-log-id="log_a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6" data-user-id="eleanor.voss"
             data-timestamp="2026-03-17 10:02:14" data-action="AI_QUERY" data-target="contract-review-session-001"
             data-template-id="tmpl_legal_review_v3" data-model-used="claude-sonnet-4-6" data-response-time="1243"
             data-mask-counts='{"NAME":3,"DATE":2,"CASE_NO":1}'
             data-details="User submitted a contract clause review query. 6 PII items anonymised before dispatch to model.">
-            <td
-              class="px-4 py-4 t-mono text-zinc-400 font-mono text-xs whitespace-nowrap transition-colors duration-200">
-              2026-03-17&nbsp;10:02</td>
-            <td
-              class="px-4 py-4 font-medium t-head text-zinc-800 text-sm whitespace-nowrap transition-colors duration-200">
-              eleanor.voss</td>
-            <td class="px-4 py-4">
-              <span
-                class="act-ai action-badge inline-block bg-blue-50 text-blue-700 text-xs px-2.5 py-1 font-mono whitespace-nowrap border border-blue-200 transition-colors duration-200">AI_QUERY</span>
-            </td>
-            <td class="px-4 py-4 t-sub text-zinc-500 text-xs transition-colors duration-200">contract-review-session-001
-            </td>
-            <td
-              class="px-4 py-4 t-mono text-zinc-500 font-mono text-xs whitespace-nowrap transition-colors duration-200">
-              claude-sonnet-4-6</td>
-            <td class="px-4 py-4 whitespace-nowrap">
-              <span class="text-xs font-medium text-emerald-700">1 243 ms</span>
-            </td>
-            <td class="px-4 py-4">
-              <!-- mask_counts JSONB rendered as pills: key→count -->
-              <div class="flex items-center gap-1 flex-wrap">
+              <td
+                class="px-4 py-4 t-mono text-zinc-400 font-mono text-xs whitespace-nowrap transition-colors duration-200">
+                {{ log.timestamp | date:'yyyy-MM-dd HH:mm' }}</td>
+              <td
+                class="px-4 py-4 font-medium t-head text-zinc-800 text-sm whitespace-nowrap transition-colors duration-200">
+                {{ log.userId }}</td>
+              <td class="px-4 py-4">
                 <span
-                  class="mask-pill bg-zinc-100 text-zinc-600 border border-zinc-200 transition-colors duration-200">NAME·3</span>
-                <span
-                  class="mask-pill bg-zinc-100 text-zinc-600 border border-zinc-200 transition-colors duration-200">DATE·2</span>
-                <span
-                  class="mask-pill bg-zinc-100 text-zinc-600 border border-zinc-200 transition-colors duration-200">CASE·1</span>
-              </div>
-            </td>
-            <td class="px-4 py-4 text-right">
-              <button onclick="openLogModal(this.closest('tr'))"
-                class="btn-view text-xs border border-zinc-300 text-zinc-500 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 whitespace-nowrap transition-colors duration-150">View
-                →</button>
-            </td>
-          </tr>
+                  class="act-ai action-badge inline-block bg-blue-50 text-blue-700 text-xs px-2.5 py-1 font-mono whitespace-nowrap border border-blue-200 transition-colors duration-200">{{ log.action }}</span>
+              </td>
+              <td class="px-4 py-4 t-sub text-zinc-500 text-xs transition-colors duration-200">{{ log.target }}
+              </td>
+              <td
+                class="px-4 py-4 t-mono text-zinc-500 font-mono text-xs whitespace-nowrap transition-colors duration-200">
+                {{ log.modelUsed || '—' }}</td>
+              <td class="px-4 py-4 whitespace-nowrap">
+                <span class="text-xs font-medium text-emerald-700">{{ log.responseTime ? (log.responseTime + ' ms') : '—' }}</span>
+              </td>
+              <td class="px-4 py-4">
+                <!-- mask_counts JSONB rendered as pills: key→count -->
+                <div class="flex items-center gap-1 flex-wrap">
+                  @for (key of getMaskKeys(log.maskCounts); track key) {
+                      <span class="mask-pill bg-zinc-100 text-zinc-600 border border-zinc-200 transition-colors duration-200">{{ key }}·{{ log.maskCounts[key] }}</span>
+                  }
+                  
+                  <!-- <span
+                    class="mask-pill bg-zinc-100 text-zinc-600 border border-zinc-200 transition-colors duration-200">DATE·2</span>
+                  <span
+                    class="mask-pill bg-zinc-100 text-zinc-600 border border-zinc-200 transition-colors duration-200">CASE·1</span> -->
+                </div>
+              </td>
+              <td class="px-4 py-4 text-right">
+                <button  (click)="openLog(log)"
+                  class="btn-view text-xs border border-zinc-300 text-zinc-500 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 whitespace-nowrap transition-colors duration-150">View
+                  →</button>
+              </td>
+            </tr>
+          }
 
-          <!-- ─── ROW 2: AI_QUERY ─── -->
+          <!-- ─── ROW 2: AI_QUERY ───
           <tr
             class="bg-row bg-white border-b b-light border-zinc-100 hover:bg-zinc-50 transition-colors duration-150 cursor-default"
             data-log-id="log_b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7" data-user-id="james.porter"
@@ -181,8 +187,8 @@
             </td>
           </tr>
 
-          <!-- ─── ROW 3: DOCUMENT_UPLOAD ─── -->
-          <tr
+          ─── ROW 3: DOCUMENT_UPLOAD ─── -->
+          <!-- <tr
             class="bg-row bg-white border-b b-light border-zinc-100 hover:bg-zinc-50 transition-colors duration-150 cursor-default"
             data-log-id="log_c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8" data-user-id="sophia.wright"
             data-timestamp="2026-03-17 09:31:02" data-action="DOCUMENT_UPLOAD" data-target="doc_merger_agreement_v4.pdf"
@@ -208,10 +214,10 @@
                 class="btn-view text-xs border border-zinc-300 text-zinc-500 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 whitespace-nowrap transition-colors duration-150">View
                 →</button>
             </td>
-          </tr>
+          </tr> -->
 
           <!-- ─── ROW 4: LOGIN_SUCCESS ─── -->
-          <tr
+          <!-- <tr
             class="bg-row bg-white border-b b-light border-zinc-100 hover:bg-zinc-50 transition-colors duration-150 cursor-default"
             data-log-id="log_d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9" data-user-id="harrison.blake"
             data-timestamp="2026-03-17 08:59:41" data-action="LOGIN_SUCCESS" data-target="auth-session"
@@ -236,10 +242,10 @@
                 class="btn-view text-xs border border-zinc-300 text-zinc-500 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 whitespace-nowrap transition-colors duration-150">View
                 →</button>
             </td>
-          </tr>
+          </tr> -->
 
           <!-- ─── ROW 5: USER_CREATED ─── -->
-          <tr
+          <!-- <tr
             class="bg-row bg-white border-b b-light border-zinc-100 hover:bg-zinc-50 transition-colors duration-150 cursor-default"
             data-log-id="log_e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0" data-user-id="harrison.blake"
             data-timestamp="2026-03-16 14:22:07" data-action="USER_CREATED" data-target="user::daniel.ford"
@@ -264,10 +270,10 @@
                 class="btn-view text-xs border border-zinc-300 text-zinc-500 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 whitespace-nowrap transition-colors duration-150">View
                 →</button>
             </td>
-          </tr>
+          </tr> -->
 
           <!-- ─── ROW 6: AI_QUERY ─── -->
-          <tr
+          <!-- <tr
             class="bg-row bg-white border-b b-light border-zinc-100 hover:bg-zinc-50 transition-colors duration-150 cursor-default"
             data-log-id="log_f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1" data-user-id="marcus.chen"
             data-timestamp="2026-03-16 11:15:33" data-action="AI_QUERY" data-target="compliance-check-session-007"
@@ -305,10 +311,10 @@
                 class="btn-view text-xs border border-zinc-300 text-zinc-500 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 whitespace-nowrap transition-colors duration-150">View
                 →</button>
             </td>
-          </tr>
+          </tr> -->
 
           <!-- ─── ROW 7: USER_UPDATED ─── -->
-          <tr
+          <!-- <tr
             class="bg-row bg-white border-b b-light border-zinc-100 hover:bg-zinc-50 transition-colors duration-150 cursor-default"
             data-log-id="log_a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2" data-user-id="harrison.blake"
             data-timestamp="2026-03-15 16:44:19" data-action="USER_UPDATED" data-target="user::marcus.chen"
@@ -333,10 +339,10 @@
                 class="btn-view text-xs border border-zinc-300 text-zinc-500 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 whitespace-nowrap transition-colors duration-150">View
                 →</button>
             </td>
-          </tr>
+          </tr> -->
 
           <!-- ─── ROW 8: USER_DEACTIVATED ─── -->
-          <tr
+          <!-- <tr
             class="bg-row bg-white border-b b-light border-zinc-100 hover:bg-zinc-50 transition-colors duration-150 cursor-default"
             data-log-id="log_b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3" data-user-id="harrison.blake"
             data-timestamp="2026-03-15 14:05:58" data-action="USER_DEACTIVATED" data-target="user::natalie.ross"
@@ -361,10 +367,10 @@
                 class="btn-view text-xs border border-zinc-300 text-zinc-500 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 whitespace-nowrap transition-colors duration-150">View
                 →</button>
             </td>
-          </tr>
+          </tr> -->
 
           <!-- ─── ROW 9: DOCUMENT_UPLOAD ─── -->
-          <tr
+          <!-- <tr
             class="bg-row bg-white border-b b-light border-zinc-100 hover:bg-zinc-50 transition-colors duration-150 cursor-default"
             data-log-id="log_c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4" data-user-id="eleanor.voss"
             data-timestamp="2026-03-14 10:19:28" data-action="DOCUMENT_UPLOAD"
@@ -390,10 +396,10 @@
                 class="btn-view text-xs border border-zinc-300 text-zinc-500 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 whitespace-nowrap transition-colors duration-150">View
                 →</button>
             </td>
-          </tr>
+          </tr> -->
 
           <!-- ─── ROW 10: AI_QUERY ─── -->
-          <tr class="bg-row bg-white hover:bg-zinc-50 transition-colors duration-150 cursor-default"
+          <!-- <tr class="bg-row bg-white hover:bg-zinc-50 transition-colors duration-150 cursor-default"
             data-log-id="log_d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5" data-user-id="sophia.wright"
             data-timestamp="2026-03-13 15:37:52" data-action="AI_QUERY" data-target="due-diligence-session-022"
             data-template-id="tmpl_due_diligence_v4" data-model-used="claude-sonnet-4-6" data-response-time="2104"
@@ -434,7 +440,7 @@
                 class="btn-view text-xs border border-zinc-300 text-zinc-500 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 whitespace-nowrap transition-colors duration-150">View
                 →</button>
             </td>
-          </tr>
+          </tr> -->
 
         </tbody>
       </table>
