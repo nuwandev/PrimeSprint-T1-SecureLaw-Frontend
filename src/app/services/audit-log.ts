@@ -26,6 +26,13 @@ export class AuditLogService {
   getAuditLogs(): Observable<AuditLog[]> {
     return this.http.get<AuditLog[]>(this.apiUrl);
   }
+
+  exportLogs() {
+  return this.http.get('http://localhost:8080/audit/export-all-audit-logs-csv', {
+    responseType: 'blob' // 👈 VERY IMPORTANT
+  });
 }
+}
+
 
 

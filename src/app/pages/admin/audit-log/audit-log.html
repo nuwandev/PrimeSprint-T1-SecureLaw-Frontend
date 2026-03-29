@@ -37,7 +37,7 @@
           <span class="sec-badge-t text-xs font-medium text-zinc-700 transition-colors duration-200">Audit logs are
             immutable and cannot be modified</span>
         </div>
-        <button
+        <button (click)="downloadCSV()"
           class="btn-outline flex items-center justify-center gap-2 border border-zinc-200 text-zinc-600 text-sm px-5 py-2.5 hover:border-zinc-900 hover:text-zinc-900 w-full sm:w-auto transition-colors duration-200">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round"
@@ -53,6 +53,7 @@
          Wide table — horizontally scrollable on smaller screens.
     ══ -->
     <div class="b-std border border-zinc-200 md:block overflow-x-auto transition-colors duration-200">
+      @if(!loading && auditLogs.length>0){
       <table class="w-full text-sm min-w-275">
         <thead>
           <tr class="bg-thead bg-zinc-50 border-b b-std border-zinc-200 transition-colors duration-200">
@@ -93,358 +94,71 @@
         <tbody>
 
           <!-- ─── ROW  ─── -->
-          
+
           @for (log of auditLogs; track $index) {
 
-            <tr
+          <tr
             class="bg-row bg-white border-b b-light border-zinc-100 hover:bg-zinc-50 transition-colors duration-150 cursor-default"
             data-log-id="log_a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6" data-user-id="eleanor.voss"
             data-timestamp="2026-03-17 10:02:14" data-action="AI_QUERY" data-target="contract-review-session-001"
             data-template-id="tmpl_legal_review_v3" data-model-used="claude-sonnet-4-6" data-response-time="1243"
             data-mask-counts='{"NAME":3,"DATE":2,"CASE_NO":1}'
             data-details="User submitted a contract clause review query. 6 PII items anonymised before dispatch to model.">
-              <td
-                class="px-4 py-4 t-mono text-zinc-400 font-mono text-xs whitespace-nowrap transition-colors duration-200">
-                {{ log.timestamp | date:'yyyy-MM-dd HH:mm' }}</td>
-              <td
-                class="px-4 py-4 font-medium t-head text-zinc-800 text-sm whitespace-nowrap transition-colors duration-200">
-                {{ log.userId }}</td>
-              <td class="px-4 py-4">
-                <span
-                  class="act-ai action-badge inline-block bg-blue-50 text-blue-700 text-xs px-2.5 py-1 font-mono whitespace-nowrap border border-blue-200 transition-colors duration-200">{{ log.action }}</span>
-              </td>
-              <td class="px-4 py-4 t-sub text-zinc-500 text-xs transition-colors duration-200">{{ log.target }}
-              </td>
-              <td
-                class="px-4 py-4 t-mono text-zinc-500 font-mono text-xs whitespace-nowrap transition-colors duration-200">
-                {{ log.modelUsed || '—' }}</td>
-              <td class="px-4 py-4 whitespace-nowrap">
-                <span class="text-xs font-medium text-emerald-700">{{ log.responseTime ? (log.responseTime + ' ms') : '—' }}</span>
-              </td>
-              <td class="px-4 py-4">
-                <!-- mask_counts JSONB rendered as pills: key→count -->
-                <div class="flex items-center gap-1 flex-wrap">
-                  @for (key of getMaskKeys(log.maskCounts); track key) {
-                      <span class="mask-pill bg-zinc-100 text-zinc-600 border border-zinc-200 transition-colors duration-200">{{ key }}·{{ log.maskCounts[key] }}</span>
-                  }
-                  
-                  <!-- <span
-                    class="mask-pill bg-zinc-100 text-zinc-600 border border-zinc-200 transition-colors duration-200">DATE·2</span>
-                  <span
-                    class="mask-pill bg-zinc-100 text-zinc-600 border border-zinc-200 transition-colors duration-200">CASE·1</span> -->
-                </div>
-              </td>
-              <td class="px-4 py-4 text-right">
-                <button  (click)="openLog(log)"
-                  class="btn-view text-xs border border-zinc-300 text-zinc-500 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 whitespace-nowrap transition-colors duration-150">View
-                  →</button>
-              </td>
-            </tr>
-          }
-
-          <!-- ─── ROW 2: AI_QUERY ───
-          <tr
-            class="bg-row bg-white border-b b-light border-zinc-100 hover:bg-zinc-50 transition-colors duration-150 cursor-default"
-            data-log-id="log_b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7" data-user-id="james.porter"
-            data-timestamp="2026-03-17 09:48:55" data-action="AI_QUERY" data-target="litigation-risk-session-014"
-            data-template-id="tmpl_risk_analysis_v2" data-model-used="claude-opus-4-6" data-response-time="3871"
-            data-mask-counts='{"NAME":7,"ORG":4,"AMOUNT":2,"DATE":5}'
-            data-details="Complex litigation risk analysis. 18 PII items anonymised across 4 categories.">
             <td
               class="px-4 py-4 t-mono text-zinc-400 font-mono text-xs whitespace-nowrap transition-colors duration-200">
-              2026-03-17&nbsp;09:48</td>
+              {{ log.timestamp | date:'yyyy-MM-dd HH:mm' }}</td>
             <td
               class="px-4 py-4 font-medium t-head text-zinc-800 text-sm whitespace-nowrap transition-colors duration-200">
-              james.porter</td>
+              {{ log.userId }}</td>
             <td class="px-4 py-4">
               <span
-                class="act-ai action-badge inline-block bg-blue-50 text-blue-700 text-xs px-2.5 py-1 font-mono whitespace-nowrap border border-blue-200 transition-colors duration-200">AI_QUERY</span>
+                class="act-ai action-badge inline-block bg-blue-50 text-blue-700 text-xs px-2.5 py-1 font-mono whitespace-nowrap border border-blue-200 transition-colors duration-200">{{
+                log.action }}</span>
             </td>
-            <td class="px-4 py-4 t-sub text-zinc-500 text-xs transition-colors duration-200">litigation-risk-session-014
+            <td class="px-4 py-4 t-sub text-zinc-500 text-xs transition-colors duration-200">{{ log.target }}
             </td>
             <td
               class="px-4 py-4 t-mono text-zinc-500 font-mono text-xs whitespace-nowrap transition-colors duration-200">
-              claude-opus-4-6</td>
+              {{ log.modelUsed || '—' }}</td>
             <td class="px-4 py-4 whitespace-nowrap">
-              <span class="text-xs font-medium text-amber-600">3 871 ms</span>
+              <span class="text-xs font-medium text-emerald-700">{{ log.responseTime ? (log.responseTime + ' ms') : '—'
+                }}</span>
             </td>
             <td class="px-4 py-4">
+              <!-- mask_counts JSONB rendered as pills: key→count -->
               <div class="flex items-center gap-1 flex-wrap">
+                @for (key of getMaskKeys(log.maskCounts); track key) {
                 <span
-                  class="mask-pill bg-zinc-100 text-zinc-600 border border-zinc-200 transition-colors duration-200">NAME·7</span>
-                <span
-                  class="mask-pill bg-zinc-100 text-zinc-600 border border-zinc-200 transition-colors duration-200">ORG·4</span>
-                <span
-                  class="mask-pill bg-zinc-100 text-zinc-600 border border-zinc-200 transition-colors duration-200">AMT·2</span>
-                <span
-                  class="mask-pill bg-zinc-100 text-zinc-600 border border-zinc-200 transition-colors duration-200">DATE·5</span>
+                  class="mask-pill bg-zinc-100 text-zinc-600 border border-zinc-200 transition-colors duration-200">{{
+                  key }}·{{ log.maskCounts[key] }}</span>
+                }
+
+                <!-- <span
+                        class="mask-pill bg-zinc-100 text-zinc-600 border border-zinc-200 transition-colors duration-200">DATE·2</span>
+                      <span
+                        class="mask-pill bg-zinc-100 text-zinc-600 border border-zinc-200 transition-colors duration-200">CASE·1</span> -->
               </div>
             </td>
             <td class="px-4 py-4 text-right">
-              <button onclick="openLogModal(this.closest('tr'))"
+              <button (click)="openLog(log)"
                 class="btn-view text-xs border border-zinc-300 text-zinc-500 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 whitespace-nowrap transition-colors duration-150">View
                 →</button>
             </td>
           </tr>
-
-          ─── ROW 3: DOCUMENT_UPLOAD ─── -->
-          <!-- <tr
-            class="bg-row bg-white border-b b-light border-zinc-100 hover:bg-zinc-50 transition-colors duration-150 cursor-default"
-            data-log-id="log_c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8" data-user-id="sophia.wright"
-            data-timestamp="2026-03-17 09:31:02" data-action="DOCUMENT_UPLOAD" data-target="doc_merger_agreement_v4.pdf"
-            data-template-id="" data-model-used="" data-response-time="" data-mask-counts=""
-            data-details="Document uploaded to secure store. File size: 2.4 MB. Awaiting review assignment.">
-            <td
-              class="px-4 py-4 t-mono text-zinc-400 font-mono text-xs whitespace-nowrap transition-colors duration-200">
-              2026-03-17&nbsp;09:31</td>
-            <td
-              class="px-4 py-4 font-medium t-head text-zinc-800 text-sm whitespace-nowrap transition-colors duration-200">
-              sophia.wright</td>
-            <td class="px-4 py-4">
-              <span
-                class="act-doc action-badge inline-block bg-emerald-50 text-emerald-700 text-xs px-2.5 py-1 font-mono whitespace-nowrap border border-emerald-200 transition-colors duration-200">DOCUMENT_UPLOAD</span>
-            </td>
-            <td class="px-4 py-4 t-sub text-zinc-500 text-xs transition-colors duration-200">doc_merger_agreement_v4.pdf
-            </td>
-            <td class="px-4 py-4 t-muted text-zinc-400 text-xs transition-colors duration-200">—</td>
-            <td class="px-4 py-4 t-muted text-zinc-400 text-xs transition-colors duration-200">—</td>
-            <td class="px-4 py-4 t-muted text-zinc-400 text-xs transition-colors duration-200">—</td>
-            <td class="px-4 py-4 text-right">
-              <button onclick="openLogModal(this.closest('tr'))"
-                class="btn-view text-xs border border-zinc-300 text-zinc-500 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 whitespace-nowrap transition-colors duration-150">View
-                →</button>
-            </td>
-          </tr> -->
-
-          <!-- ─── ROW 4: LOGIN_SUCCESS ─── -->
-          <!-- <tr
-            class="bg-row bg-white border-b b-light border-zinc-100 hover:bg-zinc-50 transition-colors duration-150 cursor-default"
-            data-log-id="log_d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9" data-user-id="harrison.blake"
-            data-timestamp="2026-03-17 08:59:41" data-action="LOGIN_SUCCESS" data-target="auth-session"
-            data-template-id="" data-model-used="" data-response-time="" data-mask-counts=""
-            data-details="Successful authentication via username/password. Session token issued.">
-            <td
-              class="px-4 py-4 t-mono text-zinc-400 font-mono text-xs whitespace-nowrap transition-colors duration-200">
-              2026-03-17&nbsp;08:59</td>
-            <td
-              class="px-4 py-4 font-medium t-head text-zinc-800 text-sm whitespace-nowrap transition-colors duration-200">
-              harrison.blake</td>
-            <td class="px-4 py-4">
-              <span
-                class="act-login action-badge inline-block bg-zinc-100 text-zinc-600 text-xs px-2.5 py-1 font-mono whitespace-nowrap border border-zinc-200 transition-colors duration-200">LOGIN_SUCCESS</span>
-            </td>
-            <td class="px-4 py-4 t-sub text-zinc-500 text-xs transition-colors duration-200">auth-session</td>
-            <td class="px-4 py-4 t-muted text-zinc-400 text-xs transition-colors duration-200">—</td>
-            <td class="px-4 py-4 t-muted text-zinc-400 text-xs transition-colors duration-200">—</td>
-            <td class="px-4 py-4 t-muted text-zinc-400 text-xs transition-colors duration-200">—</td>
-            <td class="px-4 py-4 text-right">
-              <button onclick="openLogModal(this.closest('tr'))"
-                class="btn-view text-xs border border-zinc-300 text-zinc-500 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 whitespace-nowrap transition-colors duration-150">View
-                →</button>
-            </td>
-          </tr> -->
-
-          <!-- ─── ROW 5: USER_CREATED ─── -->
-          <!-- <tr
-            class="bg-row bg-white border-b b-light border-zinc-100 hover:bg-zinc-50 transition-colors duration-150 cursor-default"
-            data-log-id="log_e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0" data-user-id="harrison.blake"
-            data-timestamp="2026-03-16 14:22:07" data-action="USER_CREATED" data-target="user::daniel.ford"
-            data-template-id="" data-model-used="" data-response-time="" data-mask-counts=""
-            data-details="New user account created with role JUNIOR. Supervisor assigned: sophia.wright.">
-            <td
-              class="px-4 py-4 t-mono text-zinc-400 font-mono text-xs whitespace-nowrap transition-colors duration-200">
-              2026-03-16&nbsp;14:22</td>
-            <td
-              class="px-4 py-4 font-medium t-head text-zinc-800 text-sm whitespace-nowrap transition-colors duration-200">
-              harrison.blake</td>
-            <td class="px-4 py-4">
-              <span
-                class="act-user action-badge inline-block bg-amber-50 text-amber-700 text-xs px-2.5 py-1 font-mono whitespace-nowrap border border-amber-200 transition-colors duration-200">USER_CREATED</span>
-            </td>
-            <td class="px-4 py-4 t-sub text-zinc-500 text-xs transition-colors duration-200">user::daniel.ford</td>
-            <td class="px-4 py-4 t-muted text-zinc-400 text-xs transition-colors duration-200">—</td>
-            <td class="px-4 py-4 t-muted text-zinc-400 text-xs transition-colors duration-200">—</td>
-            <td class="px-4 py-4 t-muted text-zinc-400 text-xs transition-colors duration-200">—</td>
-            <td class="px-4 py-4 text-right">
-              <button onclick="openLogModal(this.closest('tr'))"
-                class="btn-view text-xs border border-zinc-300 text-zinc-500 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 whitespace-nowrap transition-colors duration-150">View
-                →</button>
-            </td>
-          </tr> -->
-
-          <!-- ─── ROW 6: AI_QUERY ─── -->
-          <!-- <tr
-            class="bg-row bg-white border-b b-light border-zinc-100 hover:bg-zinc-50 transition-colors duration-150 cursor-default"
-            data-log-id="log_f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1" data-user-id="marcus.chen"
-            data-timestamp="2026-03-16 11:15:33" data-action="AI_QUERY" data-target="compliance-check-session-007"
-            data-template-id="tmpl_compliance_v1" data-model-used="claude-haiku-4-5" data-response-time="612"
-            data-mask-counts='{"NAME":1,"ID_NO":2}'
-            data-details="Quick compliance check query. 3 PII items masked before model dispatch.">
-            <td
-              class="px-4 py-4 t-mono text-zinc-400 font-mono text-xs whitespace-nowrap transition-colors duration-200">
-              2026-03-16&nbsp;11:15</td>
-            <td
-              class="px-4 py-4 font-medium t-head text-zinc-800 text-sm whitespace-nowrap transition-colors duration-200">
-              marcus.chen</td>
-            <td class="px-4 py-4">
-              <span
-                class="act-ai action-badge inline-block bg-blue-50 text-blue-700 text-xs px-2.5 py-1 font-mono whitespace-nowrap border border-blue-200 transition-colors duration-200">AI_QUERY</span>
-            </td>
-            <td class="px-4 py-4 t-sub text-zinc-500 text-xs transition-colors duration-200">
-              compliance-check-session-007</td>
-            <td
-              class="px-4 py-4 t-mono text-zinc-500 font-mono text-xs whitespace-nowrap transition-colors duration-200">
-              claude-haiku-4-5</td>
-            <td class="px-4 py-4 whitespace-nowrap">
-              <span class="text-xs font-medium text-emerald-700">612 ms</span>
-            </td>
-            <td class="px-4 py-4">
-              <div class="flex items-center gap-1 flex-wrap">
-                <span
-                  class="mask-pill bg-zinc-100 text-zinc-600 border border-zinc-200 transition-colors duration-200">NAME·1</span>
-                <span
-                  class="mask-pill bg-zinc-100 text-zinc-600 border border-zinc-200 transition-colors duration-200">ID·2</span>
-              </div>
-            </td>
-            <td class="px-4 py-4 text-right">
-              <button onclick="openLogModal(this.closest('tr'))"
-                class="btn-view text-xs border border-zinc-300 text-zinc-500 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 whitespace-nowrap transition-colors duration-150">View
-                →</button>
-            </td>
-          </tr> -->
-
-          <!-- ─── ROW 7: USER_UPDATED ─── -->
-          <!-- <tr
-            class="bg-row bg-white border-b b-light border-zinc-100 hover:bg-zinc-50 transition-colors duration-150 cursor-default"
-            data-log-id="log_a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2" data-user-id="harrison.blake"
-            data-timestamp="2026-03-15 16:44:19" data-action="USER_UPDATED" data-target="user::marcus.chen"
-            data-template-id="" data-model-used="" data-response-time="" data-mask-counts=""
-            data-details="Role changed from SENIOR to JUNIOR. Status remains DISABLED. Audit entry auto-generated.">
-            <td
-              class="px-4 py-4 t-mono text-zinc-400 font-mono text-xs whitespace-nowrap transition-colors duration-200">
-              2026-03-15&nbsp;16:44</td>
-            <td
-              class="px-4 py-4 font-medium t-head text-zinc-800 text-sm whitespace-nowrap transition-colors duration-200">
-              harrison.blake</td>
-            <td class="px-4 py-4">
-              <span
-                class="act-user action-badge inline-block bg-amber-50 text-amber-700 text-xs px-2.5 py-1 font-mono whitespace-nowrap border border-amber-200 transition-colors duration-200">USER_UPDATED</span>
-            </td>
-            <td class="px-4 py-4 t-sub text-zinc-500 text-xs transition-colors duration-200">user::marcus.chen</td>
-            <td class="px-4 py-4 t-muted text-zinc-400 text-xs transition-colors duration-200">—</td>
-            <td class="px-4 py-4 t-muted text-zinc-400 text-xs transition-colors duration-200">—</td>
-            <td class="px-4 py-4 t-muted text-zinc-400 text-xs transition-colors duration-200">—</td>
-            <td class="px-4 py-4 text-right">
-              <button onclick="openLogModal(this.closest('tr'))"
-                class="btn-view text-xs border border-zinc-300 text-zinc-500 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 whitespace-nowrap transition-colors duration-150">View
-                →</button>
-            </td>
-          </tr> -->
-
-          <!-- ─── ROW 8: USER_DEACTIVATED ─── -->
-          <!-- <tr
-            class="bg-row bg-white border-b b-light border-zinc-100 hover:bg-zinc-50 transition-colors duration-150 cursor-default"
-            data-log-id="log_b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3" data-user-id="harrison.blake"
-            data-timestamp="2026-03-15 14:05:58" data-action="USER_DEACTIVATED" data-target="user::natalie.ross"
-            data-template-id="" data-model-used="" data-response-time="" data-mask-counts=""
-            data-details="Account deactivated. Status set to DISABLED. Data and history preserved per retention policy.">
-            <td
-              class="px-4 py-4 t-mono text-zinc-400 font-mono text-xs whitespace-nowrap transition-colors duration-200">
-              2026-03-15&nbsp;14:05</td>
-            <td
-              class="px-4 py-4 font-medium t-head text-zinc-800 text-sm whitespace-nowrap transition-colors duration-200">
-              harrison.blake</td>
-            <td class="px-4 py-4">
-              <span
-                class="act-user action-badge inline-block bg-amber-50 text-amber-700 text-xs px-2.5 py-1 font-mono whitespace-nowrap border border-amber-200 transition-colors duration-200">USER_DEACTIVATED</span>
-            </td>
-            <td class="px-4 py-4 t-sub text-zinc-500 text-xs transition-colors duration-200">user::natalie.ross</td>
-            <td class="px-4 py-4 t-muted text-zinc-400 text-xs transition-colors duration-200">—</td>
-            <td class="px-4 py-4 t-muted text-zinc-400 text-xs transition-colors duration-200">—</td>
-            <td class="px-4 py-4 t-muted text-zinc-400 text-xs transition-colors duration-200">—</td>
-            <td class="px-4 py-4 text-right">
-              <button onclick="openLogModal(this.closest('tr'))"
-                class="btn-view text-xs border border-zinc-300 text-zinc-500 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 whitespace-nowrap transition-colors duration-150">View
-                →</button>
-            </td>
-          </tr> -->
-
-          <!-- ─── ROW 9: DOCUMENT_UPLOAD ─── -->
-          <!-- <tr
-            class="bg-row bg-white border-b b-light border-zinc-100 hover:bg-zinc-50 transition-colors duration-150 cursor-default"
-            data-log-id="log_c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4" data-user-id="eleanor.voss"
-            data-timestamp="2026-03-14 10:19:28" data-action="DOCUMENT_UPLOAD"
-            data-target="doc_lease_amendment_final.docx" data-template-id="" data-model-used="" data-response-time=""
-            data-mask-counts="" data-details="Document uploaded to secure store. File size: 0.9 MB.">
-            <td
-              class="px-4 py-4 t-mono text-zinc-400 font-mono text-xs whitespace-nowrap transition-colors duration-200">
-              2026-03-14&nbsp;10:19</td>
-            <td
-              class="px-4 py-4 font-medium t-head text-zinc-800 text-sm whitespace-nowrap transition-colors duration-200">
-              eleanor.voss</td>
-            <td class="px-4 py-4">
-              <span
-                class="act-doc action-badge inline-block bg-emerald-50 text-emerald-700 text-xs px-2.5 py-1 font-mono whitespace-nowrap border border-emerald-200 transition-colors duration-200">DOCUMENT_UPLOAD</span>
-            </td>
-            <td class="px-4 py-4 t-sub text-zinc-500 text-xs transition-colors duration-200">
-              doc_lease_amendment_final.docx</td>
-            <td class="px-4 py-4 t-muted text-zinc-400 text-xs transition-colors duration-200">—</td>
-            <td class="px-4 py-4 t-muted text-zinc-400 text-xs transition-colors duration-200">—</td>
-            <td class="px-4 py-4 t-muted text-zinc-400 text-xs transition-colors duration-200">—</td>
-            <td class="px-4 py-4 text-right">
-              <button onclick="openLogModal(this.closest('tr'))"
-                class="btn-view text-xs border border-zinc-300 text-zinc-500 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 whitespace-nowrap transition-colors duration-150">View
-                →</button>
-            </td>
-          </tr> -->
-
-          <!-- ─── ROW 10: AI_QUERY ─── -->
-          <!-- <tr class="bg-row bg-white hover:bg-zinc-50 transition-colors duration-150 cursor-default"
-            data-log-id="log_d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5" data-user-id="sophia.wright"
-            data-timestamp="2026-03-13 15:37:52" data-action="AI_QUERY" data-target="due-diligence-session-022"
-            data-template-id="tmpl_due_diligence_v4" data-model-used="claude-sonnet-4-6" data-response-time="2104"
-            data-mask-counts='{"NAME":5,"ORG":3,"AMOUNT":4,"DATE":1,"ADDR":2}'
-            data-details="Due diligence summary query. 15 PII items masked across 5 categories before dispatch.">
-            <td
-              class="px-4 py-4 t-mono text-zinc-400 font-mono text-xs whitespace-nowrap transition-colors duration-200">
-              2026-03-13&nbsp;15:37</td>
-            <td
-              class="px-4 py-4 font-medium t-head text-zinc-800 text-sm whitespace-nowrap transition-colors duration-200">
-              sophia.wright</td>
-            <td class="px-4 py-4">
-              <span
-                class="act-ai action-badge inline-block bg-blue-50 text-blue-700 text-xs px-2.5 py-1 font-mono whitespace-nowrap border border-blue-200 transition-colors duration-200">AI_QUERY</span>
-            </td>
-            <td class="px-4 py-4 t-sub text-zinc-500 text-xs transition-colors duration-200">due-diligence-session-022
-            </td>
-            <td
-              class="px-4 py-4 t-mono text-zinc-500 font-mono text-xs whitespace-nowrap transition-colors duration-200">
-              claude-sonnet-4-6</td>
-            <td class="px-4 py-4 whitespace-nowrap">
-              <span class="text-xs font-medium text-amber-600">2 104 ms</span>
-            </td>
-            <td class="px-4 py-4">
-              <div class="flex items-center gap-1 flex-wrap">
-                <span
-                  class="mask-pill bg-zinc-100 text-zinc-600 border border-zinc-200 transition-colors duration-200">NAME·5</span>
-                <span
-                  class="mask-pill bg-zinc-100 text-zinc-600 border border-zinc-200 transition-colors duration-200">ORG·3</span>
-                <span
-                  class="mask-pill bg-zinc-100 text-zinc-600 border border-zinc-200 transition-colors duration-200">AMT·4</span>
-                <span
-                  class="mask-pill bg-zinc-100 text-zinc-600 border border-zinc-200 transition-colors duration-200">+2</span>
-              </div>
-            </td>
-            <td class="px-4 py-4 text-right">
-              <button onclick="openLogModal(this.closest('tr'))"
-                class="btn-view text-xs border border-zinc-300 text-zinc-500 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 whitespace-nowrap transition-colors duration-150">View
-                →</button>
-            </td>
-          </tr> -->
+          }
 
         </tbody>
       </table>
+      }
+
     </div>
+
+    @if(!loading && auditLogs.length === 0){
+    <div>
+      No audit logs found
+    </div>
+    }
+
 
     <!-- ══ MOBILE CARDS ══ -->
     <div class="md:hidden b-std border border-zinc-200 divide-y transition-colors duration-200">

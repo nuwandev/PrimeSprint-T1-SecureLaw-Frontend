@@ -29,13 +29,13 @@ export class AuditLogComponent implements OnInit {
     this.auditLogService.getAuditLogs().subscribe({
       next: (data) => {
         this.auditLogs = data;
-        console.log('API DATA:', data); // 👈 ADD THIS
+        console.log('API DATA:', data); // ADD THIS
         this.loading = false;
       },
       error: (err) => {
         this.error = 'Failed to load audit logs';
         console.error(err);
-        this.auditLogs = []; // ✅ prevent UI break
+        this.auditLogs = []; // prevent UI break
         this.loading = false;
       }
     });
@@ -49,6 +49,25 @@ export class AuditLogComponent implements OnInit {
 
   openLog(log: AuditLog) {
     this.selectedLog = log;
+  }
+
+  downloadCSV() {
+    this.auditLogService.exportLogs().subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'audit_logs.csv'; // filename
+
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      },
+      error: (err) => {
+        console.error('Export failed', err);
+      }
+    });
   }
 
 }
