@@ -2,13 +2,13 @@ import { Component, OnInit } from '@angular/core';
 import { NavBar } from '../../../components/nav-bar/nav-bar';
 import { AuditLogService} from '../../../services/audit-log';
 import { AuditLog } from '../../../models/audit-log';
-import { DatePipe } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 
 @Component({
   selector: 'app-audit-log',
-  imports: [NavBar, DatePipe, FormsModule],
+  imports: [CommonModule, NavBar, DatePipe, FormsModule],
   templateUrl: './audit-log.html',
   styleUrl: './audit-log.css',
 })
@@ -79,16 +79,19 @@ export class AuditLogComponent implements OnInit {
 
   // MAIN FILTER FUNCTION
   applyFilters() {
+    console.log('Filter clicked'); // 👈 ADD THIS
     const { userId, fromDate, toDate } = this.filters;
 
     this.loading = true;
 
     // CASE 1: userId + date range
     if (userId && fromDate && toDate) {
+      console.log('In case 1'); // 👈 ADD THIS
       this.auditLogService.getByDateAndUser(userId, fromDate, toDate)
         .subscribe({
           next: (res) => {
             this.auditLogs = res;
+            console.log('API DATA id and date:', res);
             this.loading = false;
           },
           error: () => this.loading = false
@@ -97,10 +100,12 @@ export class AuditLogComponent implements OnInit {
 
     // CASE 2: only userId
     else if (userId) {
+      console.log('In case 2'); // 👈 ADD THIS
       this.auditLogService.getByUserId(userId)
         .subscribe({
           next: (res) => {
             this.auditLogs = res;
+            console.log('API DATA id only:', res);
             this.loading = false;
           },
           error: () => this.loading = false
@@ -109,10 +114,12 @@ export class AuditLogComponent implements OnInit {
 
     // CASE 3: only date range
     else if (fromDate && toDate) {
+      console.log('In case 3'); // 👈 ADD THIS
       this.auditLogService.getByDate(fromDate, toDate)
         .subscribe({
           next: (res) => {
             this.auditLogs = res;
+            console.log('API DATA fromTodate:', res);
             this.loading = false;
           },
           error: () => this.loading = false
@@ -121,6 +128,7 @@ export class AuditLogComponent implements OnInit {
 
     // CASE 4: no filters
     else {
+      console.log('In else'); // 👈 ADD THIS
       this.loadAuditLogs();
     }
   }
