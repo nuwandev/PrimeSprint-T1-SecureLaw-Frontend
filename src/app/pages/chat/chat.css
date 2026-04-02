@@ -1,15 +1,14 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-@import "flowbite/src/themes/default";
-@source "../node_modules/flowbite";
-@plugin "flowbite/plugin";
 
 /* Sidebar and Layout logic */
 .chat-app { font-family: 'DM Sans', sans-serif; }
 .serif { font-family: 'Cormorant Garamond', serif; }
 
 #themeCheck, #sidebarCheck { display: none; }
-
+[class*="chat-scroll"] {
+  display: flex;
+  flex-direction: column;
+}
 /* Light Theme (Defaults) */
 .page-bg    { background:#ffffff; color:#18181b; }
 .nav-bg     { background:#ffffff; border-color:#e4e4e7; }
@@ -29,8 +28,9 @@
 .msg-time   { color:#a1a1aa; }
 .msg-name   { color:#18181b; }
 .gen-text   { color:#a1a1aa; }
-.dot        { background:#a1a1aa; }
-
+.dot        { background:#a1a1aa; }.ai-bubble  { background:#f4f4f5; border-color:#e4e4e7; border-radius: 16px; }
+.user-bubble{ background:#18181b; border-radius: 16px; color: #fff; }
+.btn-send   { background:#18181b; color:#ffffff; border-radius: 10px; }
 /* Dark Theme (When Checkbox is Checked) */
 #themeCheck:checked ~ .page-bg { background:#09090b; color:#f4f4f5; }
 #themeCheck:checked ~ .page-bg .nav-bg     { background:#09090b; border-color:#27272a; }
@@ -50,7 +50,13 @@
 #themeCheck:checked ~ .page-bg .msg-name   { color:#f4f4f5; }
 #themeCheck:checked ~ .page-bg .gen-text   { color:#52525b; }
 #themeCheck:checked ~ .page-bg .dot        { background:#52525b; }
+.anon-bg  { background:#f0fdf4; border-color:#bbf7d0; border-radius: 6px; }
+.tip-bg   { background:#18181b; border-color:#3f3f46; border-radius: 10px; }
+.tip-arrow{ background:#18181b; border-color:#3f3f46; }
+.tip-wrap:hover .tip-box { display:block !important; }
 
+/* Dark mode */
+#themeCheck:checked ~ .page-bg .anon-bg { background:#052e16; border-color:#166534; }
 /* Toggle Icons Logic */
 #themeCheck:not(:checked) ~ .page-bg .icon-sun  { display:none; }
 #themeCheck:not(:checked) ~ .page-bg .icon-moon { display:block; }
