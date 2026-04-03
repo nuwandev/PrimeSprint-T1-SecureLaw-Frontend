@@ -12,6 +12,8 @@ export class ExtractTextApiService {
   private readonly http = inject(HttpClient);
 
   extract(payload: TextExtractRequest): Observable<TextExtractResponse> {
-    return this.http.post<TextExtractResponse>(this.endpoint, payload);
+    const formData = new FormData();
+    formData.append('file', payload.file, payload.file.name);
+    return this.http.post<TextExtractResponse>(this.endpoint, formData);
   }
 }
