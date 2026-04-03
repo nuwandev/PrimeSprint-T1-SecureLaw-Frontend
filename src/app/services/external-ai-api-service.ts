@@ -8,7 +8,7 @@ import { HttpClient } from '@angular/common/http';
   providedIn: 'root',
 })
 export class ExternalAiApiService {
-  private readonly endpoint = `${environment.apiUrl}/api/external/api/process`;
+  private readonly endpoint = `${environment.apiUrl}/api/external/ai/process`;
   private readonly http = inject(HttpClient);
   process(payload: ExternalAiRequest): Observable<ExternalAiResponse> {
     return this.http.post<ExternalAiResponse>(this.endpoint, payload);
