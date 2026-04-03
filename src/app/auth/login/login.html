@@ -107,9 +107,10 @@
                 >
                   Password
                 </label>
-                <a
-                  href="#"
-                  class="text-xs text-zinc-400 hover:text-zinc-900 transition-colors duration-150 underline underline-offset-2"
+                <a routerLink="/forgotpassword"
+                   formControlName="NewPassword"
+                  id="CNewPassword"
+                  class="text-xs text-zinc-400 hover:text-zinc-900 transition-colors duration-150 underline underline-offset-2 cursor-pointer"
                 >
                   Forgot password?
                 </a>
@@ -255,5 +256,7 @@
     checkbox.addEventListener('change', () => {
       checkIcon.classList.toggle('hidden', !checkbox.checked);
     });
+
+
   </script>
 </div>

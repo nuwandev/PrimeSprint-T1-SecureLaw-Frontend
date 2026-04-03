@@ -5,6 +5,7 @@ import { authGuard } from './guards/auth-guard';
 import { roleGuard } from './guards/role-guard';
 import { Chat } from './pages/chat/chat';
 import { AuditLog } from './pages/admin/audit-log/audit-log';
+import { Forgotpassword } from './auth/login/forgotpassword/forgotpassword';
 
 export const routes: Routes = [
   {
@@ -16,6 +17,11 @@ export const routes: Routes = [
     path: 'login',
     component: Login,
     canActivate: [authGuard],
+    
+  },
+  {
+      path:'forgotpassword',
+      component:Forgotpassword,
   },
   {
     path: 'admin',

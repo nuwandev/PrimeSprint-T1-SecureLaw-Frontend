@@ -22,4 +22,9 @@ export class Auth {
   me() {
     return this.http.get(`${environment.apiUrl}/api/auth/me`);
   }
+
+  // Add forgot password API call
+  resetPassword(data: { email: string; newPassword: string }) {
+    return this.http.post(`${this.API}/forgot-password`, data);
+  }
 }
