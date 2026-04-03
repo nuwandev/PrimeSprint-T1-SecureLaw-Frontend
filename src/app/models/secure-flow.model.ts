@@ -8,7 +8,7 @@ export interface TextExtractResponse {
 
 export interface PiiDetectRequest {
   requestId: string;
-  documentExtractedContent: string;
+  documentExtractedContent: string | null;
   userPrompt: string;
 }
 export interface SensitiveDataItem {
@@ -23,7 +23,7 @@ export type PiiDetectResponse = SensitiveDataItem[];
 export interface MaskRequest {
   requestId: string;
   prompt: string;
-  document: string;
+  document: string | null;
   sensitiveData: SensitiveDataItem[];
 }
 export interface MaskResponse {
@@ -40,11 +40,12 @@ export interface ExternalAiRequest {
   maskedPrompt: string;
   maskedDocument: string;
   tokenMappings: Record<string, string>;
-  options?: {
-    model?: string;
-    maxTokens?: number;
-    temperature?: number;
+  options: {
+    model: string;
+    maxTokens: number;
+    temperature: number;
   };
+  timeoutMs: number;
 }
 export interface ExternalAiResponse {
   requestId: string;
