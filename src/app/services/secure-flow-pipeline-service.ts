@@ -207,94 +207,130 @@ export class SecureFlowPipelineService {
             requestId: this.createRequestId(),
             documentExtractedContent: extractedText,
             userPrompt: cleanedPrompt,
-          }),
+          }).pipe(
+            map((detectRes) => ({ detectRes, extractedText })),
+          )
         ),
 
-        tap((detectRes) => {
-          this.logInfo('piiDetect response', detectRes);
+        switchMap(({ detectRes, extractedText }) => {
+          // CHAT FLOW: no document and no PII
+          if (extractedText === null && Array.isArray(detectRes) && detectRes.length === 0) {
+            this.logDebug('CHAT_FLOW_BYPASS', { extractedText, detectRes });
+            this.patchState({ stage: 'EXTERNAL_AI', loading: true, sensitiveData: detectRes });
+            return this.externalAiApi
+              .process({
+                requestId: this.createRequestId(),
+                provider: 'gemini',
+                maskedPrompt: cleanedPrompt,
+                maskedDocument: '',
+                tokenMappings: {},
+                options: {
+                  model: 'default',
+                  maxTokens: 0,
+                  temperature: 0.1,
+                },
+                timeoutMs: 0,
+              })
+              .pipe(
+                retry({
+                  count: 2,
+                  delay: (err, retryCount) => {
+                    if (!this.isRetryableExternalAiError(err)) {
+                      throw err;
+                    }
+                    const delayMs = Math.min(4000, 500 * Math.pow(2, retryCount));
+                    this.logDebug(`externalAi retry #${retryCount} in ${delayMs}ms`, err);
+                    return timer(delayMs);
+                  },
+                }),
+                tap((extRes) => {
+                  this.logInfo('externalAi response', extRes);
+                  this.patchState({
+                    stage: 'DONE',
+                    loading: false,
+                    result: extRes.tokenizedResponse,
+                  });
+                }),
+                // For chat flow, wrap result to match RehydrateResponse
+                map((extRes) => ({ finalText: extRes.tokenizedResponse } as RehydrateResponse)),
+              );
+          }
+
+          // SECURE FLOW: document exists or PII detected
+          this.logDebug('SECURE_FLOW', { extractedText, detectRes });
           this.patchState({ stage: 'MASKING', loading: true, sensitiveData: detectRes });
-        }),
-
-        switchMap((detectRes) => {
-          const extractedText = this.state.value.extractedText ?? '';
-
           return this.maskApi.mask({
             requestId: this.createRequestId(),
             prompt: cleanedPrompt,
-            document: extractedText,
+            document: extractedText ?? '',
             sensitiveData: detectRes,
-          });
-        }),
-
-        tap((maskRes) => {
-          this.logInfo('mask response', maskRes);
-          this.patchState({
-            stage: 'EXTERNAL_AI',
-            loading: true,
-            mappingId: maskRes.mappingId,
-            tokenMappings: maskRes.tokenMappings,
-          });
-        }),
-
-        switchMap((maskRes) =>
-          this.externalAiApi
-            .process({
-              requestId: this.createRequestId(),
-              provider: 'gemini',
-              maskedPrompt: maskRes.maskedPrompt,
-              maskedDocument: maskRes.maskedDocument,
-              tokenMappings: maskRes.tokenMappings,
-              options: {
-                model: 'default',
-                maxTokens: 0,
-                temperature: 0.1,
-              },
-              timeoutMs: 0,
-            })
-            .pipe(
-              retry({
-                count: 2,
-                delay: (err, retryCount) => {
-                  if (!this.isRetryableExternalAiError(err)) {
-                    throw err;
-                  }
-
-                  const delayMs = Math.min(4000, 500 * Math.pow(2, retryCount));
-                  this.logDebug(`externalAi retry #${retryCount} in ${delayMs}ms`, err);
-                  return timer(delayMs);
-                },
-              }),
+          }).pipe(
+            tap((maskRes) => {
+              this.logInfo('mask response', maskRes);
+              this.patchState({
+                stage: 'EXTERNAL_AI',
+                loading: true,
+                mappingId: maskRes.mappingId,
+                tokenMappings: maskRes.tokenMappings,
+              });
+            }),
+            switchMap((maskRes) =>
+              this.externalAiApi
+                .process({
+                  requestId: this.createRequestId(),
+                  provider: 'gemini',
+                  maskedPrompt: maskRes.maskedPrompt,
+                  maskedDocument: maskRes.maskedDocument,
+                  tokenMappings: maskRes.tokenMappings,
+                  options: {
+                    model: 'default',
+                    maxTokens: 0,
+                    temperature: 0.1,
+                  },
+                  timeoutMs: 0,
+                })
+                .pipe(
+                  retry({
+                    count: 2,
+                    delay: (err, retryCount) => {
+                      if (!this.isRetryableExternalAiError(err)) {
+                        throw err;
+                      }
+                      const delayMs = Math.min(4000, 500 * Math.pow(2, retryCount));
+                      this.logDebug(`externalAi retry #${retryCount} in ${delayMs}ms`, err);
+                      return timer(delayMs);
+                    },
+                  }),
+                  tap((extRes) => {
+                    this.logInfo('externalAi response', extRes);
+                    this.patchState({
+                      stage: 'REHYDRATING',
+                      loading: true,
+                      tokenizedResponse: extRes.tokenizedResponse,
+                    });
+                  }),
+                  switchMap((extRes) => {
+                    const mappingId = this.requireState(
+                      this.state.value.mappingId,
+                      'Pipeline state missing mappingId',
+                    );
+                    return this.rehydrateApi.rehydrate({
+                      mappingId,
+                      tokenizedResponse: extRes.tokenizedResponse,
+                      tokenMappings: this.state.value.tokenMappings,
+                    });
+                  }),
+                ),
             ),
-        ),
-
-        tap((extRes) => {
-          this.logInfo('externalAi response', extRes);
-          this.patchState({
-            stage: 'REHYDRATING',
-            loading: true,
-            tokenizedResponse: extRes.tokenizedResponse,
-          });
-        }),
-
-        switchMap((extRes) => {
-          const mappingId = this.requireState(
-            this.state.value.mappingId,
-            'Pipeline state missing mappingId',
           );
-
-          return this.rehydrateApi.rehydrate({
-            mappingId,
-            tokenizedResponse: extRes.tokenizedResponse,
-            tokenMappings: this.state.value.tokenMappings,
-          });
         }),
-      )
-      .pipe(
         tap((finalRes) => {
-          this.logInfo('rehydrate response', finalRes);
-          this.patchState({ stage: 'DONE', loading: false, result: finalRes.finalText });
+          // Only patch state if not already set to DONE (chat flow sets it earlier)
+          if (this.state.value.stage !== 'DONE') {
+            this.logInfo('rehydrate response', finalRes);
+            this.patchState({ stage: 'DONE', loading: false, result: finalRes.finalText });
+          }
         }),
-
         catchError((err) => {
           this.logDebug('pipeline error', err);
           this.patchState({ stage: 'ERROR', loading: false, error: err });
