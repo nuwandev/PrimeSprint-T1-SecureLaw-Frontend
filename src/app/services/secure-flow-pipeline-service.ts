@@ -4,14 +4,13 @@ import { inject, Injectable } from '@angular/core';
 import {
   BehaviorSubject,
   Observable,
-  Subject,
   catchError,
+  finalize,
   map,
   of,
   retry,
   switchMap,
   tap,
-  takeUntil,
   throwError,
   timer,
 } from 'rxjs';
@@ -69,8 +68,6 @@ export class SecureFlowPipelineService {
   });
 
   readonly state$: Observable<SecureFlowPipelineState> = this.state.asObservable();
-
-  private readonly cancelActive$ = new Subject<void>();
   private activePipelineId: string | null = null;
 
   private readonly logPrefix = '[SecureFlowPipeline]';
@@ -175,6 +172,10 @@ export class SecureFlowPipelineService {
   }
 
   startPipeline(prompt: string, file?: File | null): Observable<RehydrateResponse> {
+    if (this.state.value.loading) {
+      return throwError(() => new Error('A request is already in progress. Please wait.'));
+    }
+
     const cleanedPrompt = prompt?.trim();
     if (!cleanedPrompt) {
       this.patchState({ stage: 'ERROR', loading: false, error: new Error('Prompt is required') });
@@ -184,10 +185,8 @@ export class SecureFlowPipelineService {
     const pipelineId = this.createRequestId();
 
     // Safe-by-design: this service is a singleton with shared state.
-    // If a new pipeline starts while another is still running, cancel the active one and
-    // ensure late emissions from the previous run cannot overwrite state.
+    // Policy: single-flight (reject concurrent starts).
     this.activePipelineId = pipelineId;
-    this.cancelActive$.next();
 
     this.logInfo(`startPipeline (${pipelineId})`, {
       prompt: cleanedPrompt,
@@ -389,7 +388,11 @@ export class SecureFlowPipelineService {
         this.patchStateFor(pipelineId, { stage: 'ERROR', loading: false, error: err });
         return throwError(() => err);
       }),
-      takeUntil(this.cancelActive$),
+      finalize(() => {
+        if (this.activePipelineId === pipelineId) {
+          this.activePipelineId = null;
+        }
+      }),
     );
   }
 }
