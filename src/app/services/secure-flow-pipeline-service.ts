@@ -17,7 +17,11 @@ import {
 import { MaskApiService } from './mask-api-service';
 import { ExternalAiApiService } from './external-ai-api-service';
 import { RehydrateApiService } from './rehydrate-api-service';
-import { ExternalAiResponse, PiiDetectResponse, RehydrateResponse } from '../models/secure-flow.model';
+import {
+  ExternalAiResponse,
+  PiiDetectResponse,
+  RehydrateResponse,
+} from '../models/secure-flow.model';
 import { environment } from '../../environments/environment';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -256,12 +260,12 @@ export class SecureFlowPipelineService {
               stage: 'EXTRACTING',
               loading: true,
               uploadId: uploadRes.uploadId,
-              extractedText: uploadRes.textPreview,
+              extractedText: uploadRes.extractedText,
             });
           }),
           map((uploadRes) => ({
             uploadId: uploadRes.uploadId,
-            extractedText: uploadRes.textPreview,
+            extractedText: uploadRes.extractedText,
           })),
         )
       : of({ extractedText: extractedTextFallback });
@@ -343,30 +347,29 @@ export class SecureFlowPipelineService {
                 maskedPrompt: maskRes.maskedPrompt,
                 maskedDocument: maskRes.maskedDocument,
                 tokenMappings: maskRes.tokenMappings,
-              })
-                .pipe(
-                  tap((extRes) => {
-                    this.logInfo(`externalAi (${pipelineId})`, extRes);
-                    this.patchStateFor(pipelineId, {
-                      stage: 'REHYDRATING',
-                      loading: true,
-                      tokenizedResponse: extRes.tokenizedResponse,
-                      externalAiProvider: extRes.provider,
-                      externalAiModel: extRes.model,
-                    });
-                  }),
-                  switchMap((extRes) => {
-                    const mappingId = this.requireState(
-                      this.state.value.mappingId,
-                      'Pipeline state missing mappingId',
-                    );
-                    return this.rehydrateApi.rehydrate({
-                      mappingId,
-                      tokenizedResponse: extRes.tokenizedResponse,
-                      tokenMappings: this.state.value.tokenMappings,
-                    });
-                  }),
-                ),
+              }).pipe(
+                tap((extRes) => {
+                  this.logInfo(`externalAi (${pipelineId})`, extRes);
+                  this.patchStateFor(pipelineId, {
+                    stage: 'REHYDRATING',
+                    loading: true,
+                    tokenizedResponse: extRes.tokenizedResponse,
+                    externalAiProvider: extRes.provider,
+                    externalAiModel: extRes.model,
+                  });
+                }),
+                switchMap((extRes) => {
+                  const mappingId = this.requireState(
+                    this.state.value.mappingId,
+                    'Pipeline state missing mappingId',
+                  );
+                  return this.rehydrateApi.rehydrate({
+                    mappingId,
+                    tokenizedResponse: extRes.tokenizedResponse,
+                    tokenMappings: this.state.value.tokenMappings,
+                  });
+                }),
+              ),
             ),
           );
       }),

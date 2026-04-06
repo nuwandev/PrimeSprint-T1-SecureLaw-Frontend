@@ -1,9 +1,17 @@
 export interface TextExtractRequest {
   file: File;
 }
-export interface TextExtractResponse {
+// Backend currently returns the full extracted text under the `textPreview` key.
+// We keep a raw type that matches the backend and map it to a clearer internal shape.
+export interface TextExtractResponseRaw {
   uploadId: string;
   textPreview: string;
+  extractedText?: string;
+}
+
+export interface TextExtractResponse {
+  uploadId: string;
+  extractedText: string;
 }
 
 export interface PiiDetectRequest {
