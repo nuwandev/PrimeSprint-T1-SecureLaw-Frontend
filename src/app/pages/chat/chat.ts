@@ -83,6 +83,9 @@ export class Chat implements OnInit, AfterViewChecked {
   allConversations = new Map<string, ChatMessage[]>();
   private shouldScroll = false;
 
+  showScrollToBottomButton = false;
+  private autoScroll = true;
+
   private activeTypingIntervalId: number | null = null;
   private activeTypingMessage: ChatMessage | null = null;
 
@@ -226,7 +229,7 @@ export class Chat implements OnInit, AfterViewChecked {
     index = Math.min(total, charsPerTick);
     message.displayText = fullText.slice(0, index);
     message.html = this.markdownToSafeHtml(message.displayText);
-    this.shouldScroll = true;
+    this.shouldScroll = this.autoScroll;
     this.requestRender(true);
 
     this.activeTypingIntervalId = globalThis.setInterval(() => {
@@ -243,7 +246,7 @@ export class Chat implements OnInit, AfterViewChecked {
       index = Math.min(total, index + charsPerTick);
       message.displayText = fullText.slice(0, index);
       message.html = this.markdownToSafeHtml(message.displayText);
-      this.shouldScroll = true;
+      this.shouldScroll = this.autoScroll;
       this.requestRender(true);
 
       if (index >= total) {
@@ -251,10 +254,32 @@ export class Chat implements OnInit, AfterViewChecked {
         message.typing = false;
         message.displayText = undefined;
         message.html = this.markdownToSafeHtml(fullText);
-        this.shouldScroll = true;
+        this.shouldScroll = this.autoScroll;
         this.requestRender(true);
       }
     }, intervalMs);
+  }
+
+  onChatScroll(): void {
+    const el = this.chatScrollRef?.nativeElement;
+    if (!el) {
+      return;
+    }
+
+    const thresholdPx = 120;
+    const distanceToBottom = el.scrollHeight - (el.scrollTop + el.clientHeight);
+    const atBottom = distanceToBottom <= thresholdPx;
+
+    const nextAutoScroll = atBottom;
+    const nextShowButton = !atBottom && this.messages.length > 0;
+
+    if (nextAutoScroll === this.autoScroll && nextShowButton === this.showScrollToBottomButton) {
+      return;
+    }
+
+    this.autoScroll = nextAutoScroll;
+    this.showScrollToBottomButton = nextShowButton;
+    this.requestRender();
   }
 
   private clearPendingPromptTracking(): void {
@@ -517,7 +542,7 @@ export class Chat implements OnInit, AfterViewChecked {
 
   ngAfterViewChecked(): void {
     if (this.shouldScroll) {
-      this.scrollToBottom();
+      this.scrollToBottom(false);
       this.shouldScroll = false;
     }
   }
@@ -627,6 +652,9 @@ export class Chat implements OnInit, AfterViewChecked {
     this.isConversationLoading = true;
     this.clearPendingPromptTracking();
 
+    this.autoScroll = true;
+    this.showScrollToBottomButton = false;
+
     this.requestRender();
 
     this.http.post<SessionResponse>(`${this.apiUrl}/chat/conversation`, {}).subscribe({
@@ -661,6 +689,9 @@ export class Chat implements OnInit, AfterViewChecked {
     this.messages = this.ensureRenderedMessages(conv.messages || []);
     this.conversationId = conv.conversationId;
     this.activeConversationId = conv.conversationId;
+
+    this.autoScroll = true;
+    this.showScrollToBottomButton = false;
     this.shouldScroll = true;
     this.router.navigate(['/chat', this.conversationId]);
   }
@@ -668,6 +699,9 @@ export class Chat implements OnInit, AfterViewChecked {
   sendMessage(): void {
     const text = this.userInput.trim();
     if (!text || this.isLoading) return;
+
+    this.autoScroll = true;
+    this.showScrollToBottomButton = false;
 
     const userMsg: ChatMessage = { role: 'user', content: text, time: this.getTime() };
     this.messages.push(userMsg);
@@ -750,10 +784,23 @@ export class Chat implements OnInit, AfterViewChecked {
     }
   }
 
-  private scrollToBottom(): void {
+  scrollToBottom(smooth = true): void {
+    const el = this.chatScrollRef?.nativeElement;
+    if (!el) {
+      return;
+    }
+
     try {
-      this.chatScrollRef.nativeElement.scrollTop = this.chatScrollRef.nativeElement.scrollHeight;
-    } catch {}
+      el.scrollTo({ top: el.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
+    } catch {
+      try {
+        el.scrollTop = el.scrollHeight;
+      } catch {}
+    }
+
+    this.autoScroll = true;
+    this.showScrollToBottomButton = false;
+    this.requestRender();
   }
 
   getTime(): string {
