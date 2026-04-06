@@ -48,16 +48,18 @@
 .ai-bubble {
   background: #f4f4f5;
   border-color: #e4e4e7;
-  border-radius: 16px;
-  width: fit-content;
+  border-radius: 18px;
+  display: inline-block;
   max-width: 100%;
+  box-sizing: border-box;
 }
 .user-bubble {
   background: #18181b;
   border-radius: 16px;
   color: #fff;
-  width: fit-content;
+  display: inline-block;
   max-width: 100%;
+  box-sizing: border-box;
   margin-left: auto;
 }
 .btn-send {
@@ -296,6 +298,89 @@ textarea {
 .chat-markdown h4 {
   font-weight: 600;
   line-height: 1.25;
+}
+
+/* Keep markdown typography compact inside chat bubbles */
+.chat-markdown h1 {
+  font-size: 1.1rem;
+}
+.chat-markdown h2 {
+  font-size: 1.02rem;
+}
+.chat-markdown h3 {
+  font-size: 0.98rem;
+}
+.chat-markdown h4 {
+  font-size: 0.94rem;
+}
+
+.chat-markdown blockquote {
+  margin: 0;
+  padding-left: 0.75rem;
+  border-left: 3px solid #e4e4e7;
+  color: #71717a;
+}
+
+.chat-markdown hr {
+  border: 0;
+  border-top: 1px solid #e4e4e7;
+}
+
+.chat-markdown pre {
+  background: #ffffff;
+  border: 1px solid #e4e4e7;
+  border-radius: 12px;
+  padding: 0.75rem;
+}
+
+.chat-markdown :not(pre) > code {
+  background: #ffffff;
+  border: 1px solid #e4e4e7;
+  border-radius: 8px;
+  padding: 0.05rem 0.35rem;
+}
+
+.chat-markdown pre code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+.chat-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.chat-markdown th,
+.chat-markdown td {
+  border: 1px solid #e4e4e7;
+  padding: 0.4rem 0.5rem;
+  vertical-align: top;
+}
+
+/* Dark theme overrides for markdown surfaces */
+#themeCheck:checked ~ .page-bg .chat-markdown blockquote {
+  border-left-color: #27272a;
+  color: #a1a1aa;
+}
+
+#themeCheck:checked ~ .page-bg .chat-markdown hr {
+  border-top-color: #27272a;
+}
+
+#themeCheck:checked ~ .page-bg .chat-markdown pre {
+  background: #09090b;
+  border-color: #27272a;
+}
+
+#themeCheck:checked ~ .page-bg .chat-markdown :not(pre) > code {
+  background: #09090b;
+  border-color: #27272a;
+}
+
+#themeCheck:checked ~ .page-bg .chat-markdown th,
+#themeCheck:checked ~ .page-bg .chat-markdown td {
+  border-color: #27272a;
 }
 
 /* Loading row: show stage text inside the AI bubble */
