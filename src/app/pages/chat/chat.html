@@ -221,11 +221,15 @@
               [style.word-break]="'break-word'"
             >
               <div
-                *ngIf="msg.html; else plainAi"
+                *ngIf="msg.html !== undefined; else plainAi"
                 class="chat-markdown"
                 [innerHTML]="msg.html"
               ></div>
-              <ng-template #plainAi>{{ msg.content }}</ng-template>
+              <ng-template #plainAi>
+                <span [style.white-space]="'pre-wrap'">{{
+                  msg.typing ? (msg.displayText ?? '') : msg.content
+                }}</span>
+              </ng-template>
             </div>
 
             <div *ngIf="msg.warnings?.length" class="mt-2 text-xs text-zinc-500 leading-relaxed">

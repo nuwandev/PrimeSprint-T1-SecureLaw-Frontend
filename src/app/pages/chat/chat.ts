@@ -36,6 +36,9 @@ interface ChatMessage {
   model?: string;
   warnings?: Array<{ type: string; token: string; message: string }>;
 
+  typing?: boolean;
+  displayText?: string;
+
   segments?: ChatTextSegment[];
 
   promptPiiSummary?: string;
@@ -80,6 +83,9 @@ export class Chat implements OnInit, AfterViewChecked {
   allConversations = new Map<string, ChatMessage[]>();
   private shouldScroll = false;
 
+  private activeTypingIntervalId: number | null = null;
+  private activeTypingMessage: ChatMessage | null = null;
+
   selectedFile: File | null = null;
 
   pipelineStage: SecureFlowPipelineStage = 'IDLE';
@@ -99,16 +105,30 @@ export class Chat implements OnInit, AfterViewChecked {
   private readonly destroyRef = inject(DestroyRef);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  private requestRender(): void {
+  private renderQueued = false;
+
+  private requestRender(immediate = false): void {
     this.cdr.markForCheck();
+
     const run = () => {
+      this.renderQueued = false;
       try {
         this.cdr.detectChanges();
       } catch {}
     };
 
-    // In some environments, async work may complete without a change-detection tick.
-    // Scheduling a detectChanges makes the UI feel immediate (e.g., without waiting for user input).
+    // For timer-driven animations (typing), force an immediate repaint.
+    if (immediate) {
+      run();
+      return;
+    }
+
+    // Coalesce multiple render requests into a single microtask.
+    if (this.renderQueued) {
+      return;
+    }
+    this.renderQueued = true;
+
     if (typeof queueMicrotask === 'function') {
       queueMicrotask(run);
     } else {
@@ -122,6 +142,8 @@ export class Chat implements OnInit, AfterViewChecked {
   }
 
   ngOnInit(): void {
+    this.destroyRef.onDestroy(() => this.stopTypingAnimation(true));
+
     this.pipeline.state$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((state: SecureFlowPipelineState) => {
@@ -141,6 +163,7 @@ export class Chat implements OnInit, AfterViewChecked {
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const id = params.get('conversationId');
       if (id) {
+        this.stopTypingAnimation(true);
         this.conversationId = id;
         this.activeConversationId = id;
         const saved = this.allConversations.get(id);
@@ -153,6 +176,85 @@ export class Chat implements OnInit, AfterViewChecked {
         this.startNewConversation();
       }
     });
+  }
+
+  private stopTypingAnimation(finalizeActiveMessage = false): void {
+    if (this.activeTypingIntervalId != null) {
+      clearInterval(this.activeTypingIntervalId);
+      this.activeTypingIntervalId = null;
+    }
+
+    const msg = this.activeTypingMessage;
+    this.activeTypingMessage = null;
+
+    if (finalizeActiveMessage && msg && this.messages.includes(msg) && msg.typing) {
+      msg.typing = false;
+      msg.displayText = undefined;
+      msg.html = this.markdownToSafeHtml(msg.content ?? '');
+      this.requestRender();
+    }
+  }
+
+  private startTypingAnimation(message: ChatMessage): void {
+    this.stopTypingAnimation(true);
+    this.activeTypingMessage = message;
+
+    const fullText = message.content ?? '';
+    if (!fullText) {
+      message.typing = false;
+      message.displayText = undefined;
+      message.html = '';
+      return;
+    }
+
+    message.typing = true;
+    message.displayText = '';
+    // Always define html while typing so the template won't fall back to msg.content.
+    message.html = '';
+
+    const total = fullText.length;
+    let index = 0;
+
+    // Markdown rendering + sanitizing is non-trivial work. Update at a steady pace
+    // so it feels like typing without causing layout jitter.
+    const intervalMs = 30;
+    const targetDurationMs = Math.min(3500, Math.max(900, total * 7));
+    const ticks = Math.max(1, Math.floor(targetDurationMs / intervalMs));
+    const charsPerTick = Math.max(1, Math.ceil(total / ticks));
+
+    // Render the first chunk immediately so the bubble doesn't appear blank.
+    index = Math.min(total, charsPerTick);
+    message.displayText = fullText.slice(0, index);
+    message.html = this.markdownToSafeHtml(message.displayText);
+    this.shouldScroll = true;
+    this.requestRender(true);
+
+    this.activeTypingIntervalId = globalThis.setInterval(() => {
+      // If the message was removed (route change, conversation switch), stop cleanly.
+      if (!this.messages.includes(message)) {
+        this.stopTypingAnimation();
+        return;
+      }
+
+      if (index >= total) {
+        return;
+      }
+
+      index = Math.min(total, index + charsPerTick);
+      message.displayText = fullText.slice(0, index);
+      message.html = this.markdownToSafeHtml(message.displayText);
+      this.shouldScroll = true;
+      this.requestRender(true);
+
+      if (index >= total) {
+        this.stopTypingAnimation();
+        message.typing = false;
+        message.displayText = undefined;
+        message.html = this.markdownToSafeHtml(fullText);
+        this.shouldScroll = true;
+        this.requestRender(true);
+      }
+    }, intervalMs);
   }
 
   private clearPendingPromptTracking(): void {
@@ -394,9 +496,23 @@ export class Chat implements OnInit, AfterViewChecked {
   }
 
   private ensureRenderedMessages(messages: ChatMessage[]): ChatMessage[] {
-    return messages.map((m) =>
-      m.role === 'ai' && !m.html ? { ...m, html: this.markdownToSafeHtml(m.content) } : m,
-    );
+    return messages.map((m) => {
+      if (m.role !== 'ai') {
+        return m;
+      }
+
+      const normalized: ChatMessage = {
+        ...m,
+        typing: false,
+        displayText: undefined,
+      };
+
+      if (!normalized.html) {
+        normalized.html = this.markdownToSafeHtml(normalized.content);
+      }
+
+      return normalized;
+    });
   }
 
   ngAfterViewChecked(): void {
@@ -573,18 +689,22 @@ export class Chat implements OnInit, AfterViewChecked {
       .subscribe({
         next: (res) => {
           const aiText = res.finalText ?? '';
-          this.messages.push({
+          const aiMsg: ChatMessage = {
             role: 'ai',
             content: aiText,
-            html: this.markdownToSafeHtml(aiText),
+            html: '',
             time: this.getTime(),
             model: this.lastModelUsed ?? undefined,
             warnings: res.warnings?.length ? res.warnings : undefined,
-          });
+            typing: true,
+            displayText: '',
+          };
+          this.messages.push(aiMsg);
           this.resetFileInput();
           this.shouldScroll = true;
           this.updateSidebar(text, aiText);
           this.allConversations.set(this.conversationId, [...this.messages]);
+          this.startTypingAnimation(aiMsg);
           this.requestRender();
         },
         error: (err) => {
