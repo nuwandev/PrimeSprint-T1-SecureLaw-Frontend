@@ -23,6 +23,9 @@ export const connectivityInterceptor: HttpInterceptorFn = (req, next) => {
       if (err instanceof HttpErrorResponse) {
         if (OUTAGE_HTTP_STATUSES.has(err.status)) {
           connectivity.markServerDown();
+        } else if (err.status > 0) {
+          // Any real HTTP status means the server responded, so clear the outage flag.
+          connectivity.clearServerDown();
         }
       }
 
