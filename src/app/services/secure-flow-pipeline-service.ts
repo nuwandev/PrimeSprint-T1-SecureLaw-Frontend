@@ -4,12 +4,14 @@ import { inject, Injectable } from '@angular/core';
 import {
   BehaviorSubject,
   Observable,
+  Subject,
   catchError,
   map,
   of,
   retry,
   switchMap,
   tap,
+  takeUntil,
   throwError,
   timer,
 } from 'rxjs';
@@ -35,6 +37,8 @@ export interface SecureFlowPipelineState {
   stage: SecureFlowPipelineStage;
   loading: boolean;
   error: unknown;
+
+  pipelineId?: string;
 
   uploadId?: string;
   extractedText?: string | null;
@@ -65,6 +69,9 @@ export class SecureFlowPipelineService {
   });
 
   readonly state$: Observable<SecureFlowPipelineState> = this.state.asObservable();
+
+  private readonly cancelActive$ = new Subject<void>();
+  private activePipelineId: string | null = null;
 
   private readonly logPrefix = '[SecureFlowPipeline]';
 
@@ -98,7 +105,7 @@ export class SecureFlowPipelineService {
     console.info(this.logPrefix, message, payload);
   }
 
-  private patchState(patch: Partial<SecureFlowPipelineState>) {
+  private patchState(patch: Partial<SecureFlowPipelineState>): void {
     const prev = this.state.value;
     const next = { ...prev, ...patch };
     this.state.next(next);
@@ -119,6 +126,14 @@ export class SecureFlowPipelineService {
     } else {
       this.logDebug('state patched', patch);
     }
+  }
+
+  private patchStateFor(pipelineId: string, patch: Partial<SecureFlowPipelineState>): void {
+    if (this.activePipelineId !== pipelineId) {
+      return;
+    }
+
+    this.patchState(patch);
   }
 
   private requireState<T>(value: T, message: string): NonNullable<T> {
@@ -168,6 +183,12 @@ export class SecureFlowPipelineService {
 
     const pipelineId = this.createRequestId();
 
+    // Safe-by-design: this service is a singleton with shared state.
+    // If a new pipeline starts while another is still running, cancel the active one and
+    // ensure late emissions from the previous run cannot overwrite state.
+    this.activePipelineId = pipelineId;
+    this.cancelActive$.next();
+
     this.logInfo(`startPipeline (${pipelineId})`, {
       prompt: cleanedPrompt,
       file: file ? { name: file.name, size: file.size, type: file.type } : null,
@@ -175,10 +196,11 @@ export class SecureFlowPipelineService {
 
     const extractedTextFallback = null;
 
-    this.patchState({
+    this.patchStateFor(pipelineId, {
       stage: file ? 'UPLOADING' : 'DETECTING',
       loading: true,
       error: null,
+      pipelineId,
       uploadId: undefined,
       extractedText: file ? undefined : extractedTextFallback,
       sensitiveData: undefined,
@@ -194,7 +216,7 @@ export class SecureFlowPipelineService {
       ? this.extractTextApi.extract({ file }).pipe(
           tap((uploadRes) => {
             this.logInfo(`extractText (${pipelineId})`, uploadRes);
-            this.patchState({
+            this.patchStateFor(pipelineId, {
               stage: 'EXTRACTING',
               loading: true,
               uploadId: uploadRes.uploadId,
@@ -210,7 +232,7 @@ export class SecureFlowPipelineService {
 
     return extracted$.pipe(
       switchMap(({ extractedText }) => {
-        this.patchState({ stage: 'DETECTING', loading: true, extractedText });
+        this.patchStateFor(pipelineId, { stage: 'DETECTING', loading: true, extractedText });
         return this.piiDetectApi
           .detect({
             requestId: pipelineId,
@@ -229,7 +251,11 @@ export class SecureFlowPipelineService {
         // CHAT FLOW: no document and no PII
         if (extractedText === null && Array.isArray(detectRes) && detectRes.length === 0) {
           this.logDebug(`CHAT_FLOW_BYPASS (${pipelineId})`);
-          this.patchState({ stage: 'EXTERNAL_AI', loading: true, sensitiveData: detectRes });
+          this.patchStateFor(pipelineId, {
+            stage: 'EXTERNAL_AI',
+            loading: true,
+            sensitiveData: detectRes,
+          });
           return this.externalAiApi
             .process({
               requestId: pipelineId,
@@ -258,7 +284,7 @@ export class SecureFlowPipelineService {
               }),
               tap((extRes) => {
                 this.logInfo(`externalAi (${pipelineId})`, extRes);
-                this.patchState({
+                this.patchStateFor(pipelineId, {
                   stage: 'DONE',
                   loading: false,
                   result: extRes.tokenizedResponse,
@@ -273,7 +299,11 @@ export class SecureFlowPipelineService {
 
         // SECURE FLOW: document exists or PII detected
         this.logDebug(`SECURE_FLOW (${pipelineId})`);
-        this.patchState({ stage: 'MASKING', loading: true, sensitiveData: detectRes });
+        this.patchStateFor(pipelineId, {
+          stage: 'MASKING',
+          loading: true,
+          sensitiveData: detectRes,
+        });
         return this.maskApi
           .mask({
             requestId: pipelineId,
@@ -284,7 +314,7 @@ export class SecureFlowPipelineService {
           .pipe(
             tap((maskRes) => {
               this.logInfo(`mask (${pipelineId})`, maskRes);
-              this.patchState({
+              this.patchStateFor(pipelineId, {
                 stage: 'EXTERNAL_AI',
                 loading: true,
                 mappingId: maskRes.mappingId,
@@ -320,7 +350,7 @@ export class SecureFlowPipelineService {
                   }),
                   tap((extRes) => {
                     this.logInfo(`externalAi (${pipelineId})`, extRes);
-                    this.patchState({
+                    this.patchStateFor(pipelineId, {
                       stage: 'REHYDRATING',
                       loading: true,
                       tokenizedResponse: extRes.tokenizedResponse,
@@ -347,14 +377,19 @@ export class SecureFlowPipelineService {
         // Only patch state if not already set to DONE (chat flow sets it earlier)
         if (this.state.value.stage !== 'DONE') {
           this.logInfo(`rehydrate (${pipelineId})`, finalRes);
-          this.patchState({ stage: 'DONE', loading: false, result: finalRes.finalText });
+          this.patchStateFor(pipelineId, {
+            stage: 'DONE',
+            loading: false,
+            result: finalRes.finalText,
+          });
         }
       }),
       catchError((err) => {
         this.logDebug(`pipeline error (${pipelineId})`, err);
-        this.patchState({ stage: 'ERROR', loading: false, error: err });
+        this.patchStateFor(pipelineId, { stage: 'ERROR', loading: false, error: err });
         return throwError(() => err);
       }),
+      takeUntil(this.cancelActive$),
     );
   }
 }
