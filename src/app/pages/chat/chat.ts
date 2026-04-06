@@ -25,6 +25,7 @@ import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { SensitiveDataItem } from '../../models/secure-flow.model';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { Theme } from '../../core/services/theme';
 
 interface SessionResponse {
   conversationId: string;
@@ -111,6 +112,7 @@ export class Chat implements OnInit, AfterViewInit, AfterViewChecked {
   private readonly destroyRef = inject(DestroyRef);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly sanitizer = inject(DomSanitizer);
+  readonly theme = inject(Theme);
 
   private renderQueued = false;
   private composerKeyHandlerBound = false;
@@ -153,6 +155,12 @@ export class Chat implements OnInit, AfterViewInit, AfterViewChecked {
 
   constructor() {
     marked.setOptions({ gfm: true, breaks: true });
+  }
+
+  onThemeCheckboxChange(event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    const checked = !!input?.checked;
+    this.theme.setMode(checked ? 'dark' : 'light');
   }
 
   ngAfterViewInit(): void {

@@ -144,6 +144,9 @@
 #themeCheck:checked ~ .page-bg .gen-text {
   color: #52525b;
 }
+#themeCheck:checked ~ .page-bg .hover\:text-zinc-900:hover {
+  color: #f4f4f5;
+}
 #themeCheck:checked ~ .page-bg .dot {
   background: #52525b;
 }
@@ -278,11 +281,6 @@ textarea {
   margin: 0.2rem 0;
 }
 
-.chat-markdown pre {
-  overflow-x: auto;
-  white-space: pre;
-}
-
 .chat-markdown code {
   white-space: pre-wrap;
   word-break: break-word;
@@ -327,6 +325,8 @@ textarea {
 }
 
 .chat-markdown pre {
+  overflow-x: auto;
+  white-space: pre;
   background: #ffffff;
   border: 1px solid #e4e4e7;
   border-radius: 12px;
