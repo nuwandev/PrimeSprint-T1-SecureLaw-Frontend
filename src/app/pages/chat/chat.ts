@@ -23,6 +23,7 @@ import { environment } from '../../../environments/environment';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { SensitiveDataItem } from '../../models/secure-flow.model';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 interface SessionResponse {
   conversationId: string;
@@ -31,7 +32,7 @@ interface SessionResponse {
 interface ChatMessage {
   role: 'user' | 'ai';
   content: string;
-  html?: string;
+  html?: SafeHtml;
   time: string;
   model?: string;
   warnings?: Array<{ type: string; token: string; message: string }>;
@@ -107,6 +108,7 @@ export class Chat implements OnInit, AfterViewChecked {
   private readonly pipeline = inject(SecureFlowPipelineService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly sanitizer = inject(DomSanitizer);
 
   private renderQueued = false;
 
@@ -206,14 +208,14 @@ export class Chat implements OnInit, AfterViewChecked {
     if (!fullText) {
       message.typing = false;
       message.displayText = undefined;
-      message.html = '';
+      message.html = this.markdownToSafeHtml('');
       return;
     }
 
     message.typing = true;
     message.displayText = '';
     // Always define html while typing so the template won't fall back to msg.content.
-    message.html = '';
+    message.html = this.markdownToSafeHtml('');
 
     const total = fullText.length;
     let index = 0;
@@ -514,10 +516,12 @@ export class Chat implements OnInit, AfterViewChecked {
     return asValid({ start: rawStart, end: rawEnd });
   }
 
-  private markdownToSafeHtml(markdown: string): string {
+  private markdownToSafeHtml(markdown: string): SafeHtml {
     const raw = (marked.parse(markdown ?? '') as string) || '';
-    // Defense-in-depth: DOMPurify sanitizes, Angular will also sanitize on [innerHTML].
-    return DOMPurify.sanitize(raw, { USE_PROFILES: { html: true } });
+    // DOMPurify produces a safe HTML string; we then hand Angular a SafeHtml so it won't re-sanitize
+    // (which can strip content and log dev warnings).
+    const cleaned = DOMPurify.sanitize(raw, { USE_PROFILES: { html: true } });
+    return this.sanitizer.bypassSecurityTrustHtml(cleaned);
   }
 
   private ensureRenderedMessages(messages: ChatMessage[]): ChatMessage[] {
@@ -532,9 +536,7 @@ export class Chat implements OnInit, AfterViewChecked {
         displayText: undefined,
       };
 
-      if (!normalized.html) {
-        normalized.html = this.markdownToSafeHtml(normalized.content);
-      }
+      normalized.html ??= this.markdownToSafeHtml(normalized.content);
 
       return normalized;
     });
@@ -726,7 +728,7 @@ export class Chat implements OnInit, AfterViewChecked {
           const aiMsg: ChatMessage = {
             role: 'ai',
             content: aiText,
-            html: '',
+            html: this.markdownToSafeHtml(''),
             time: this.getTime(),
             model: this.lastModelUsed ?? undefined,
             warnings: res.warnings?.length ? res.warnings : undefined,
