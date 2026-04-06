@@ -15,6 +15,11 @@ export class Connectivity {
   private readonly serverDown = signal(false);
   readonly offline = signal<boolean>(globalThis.navigator?.onLine === false);
 
+  private serverDownHits = 0;
+  private lastServerDownHitAt = 0;
+  private readonly serverDownHitWindowMs = 8000;
+  private readonly serverDownHitThreshold = 2;
+
   readonly outage = computed<OutageState | null>(() => {
     if (this.offline()) {
       return {
@@ -44,21 +49,22 @@ export class Connectivity {
   }
 
   markServerDown(): void {
-    this.serverDown.set(true);
+    const now = Date.now();
+    if (now - this.lastServerDownHitAt > this.serverDownHitWindowMs) {
+      this.serverDownHits = 0;
+    }
+
+    this.lastServerDownHitAt = now;
+    this.serverDownHits = Math.min(this.serverDownHitThreshold, this.serverDownHits + 1);
+
+    if (this.serverDownHits >= this.serverDownHitThreshold) {
+      this.serverDown.set(true);
+    }
   }
 
   clearServerDown(): void {
     this.serverDown.set(false);
-  }
-
-  looksLikeConnectivityFailure(message: string): boolean {
-    const normalized = message.toLowerCase();
-    return (
-      normalized.includes('err_connection_refused') ||
-      normalized.includes('failed to fetch') ||
-      normalized.includes('networkerror') ||
-      normalized.includes('network error') ||
-      normalized.includes('err_network')
-    );
+    this.serverDownHits = 0;
+    this.lastServerDownHitAt = 0;
   }
 }
