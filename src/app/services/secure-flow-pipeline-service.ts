@@ -289,7 +289,7 @@ export class SecureFlowPipelineService {
 
       switchMap(({ detectRes, extractedText }) => {
         // CHAT FLOW: no document and no PII
-        if (extractedText === null && Array.isArray(detectRes) && detectRes.length === 0) {
+        if (extractedText === null && detectRes.length === 0) {
           this.logDebug(`CHAT_FLOW_BYPASS (${pipelineId})`);
           this.patchStateFor(pipelineId, {
             stage: 'EXTERNAL_AI',
