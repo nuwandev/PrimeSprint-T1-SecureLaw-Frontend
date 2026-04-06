@@ -6,6 +6,7 @@ import { UserService } from './services/user.service';
 import { finalize } from 'rxjs';
 import { User } from './models/user';
 import { Theme } from './core/services/theme';
+import { Connectivity } from './core/services/connectivity';
 
 @Component({
   selector: 'app-root',
@@ -23,6 +24,7 @@ export class App implements OnInit {
     private readonly healthService: HealthService,
     private readonly userService: UserService,
     private readonly theme: Theme,
+    protected readonly connectivity: Connectivity,
   ) {}
 
   ngOnInit(): void {
