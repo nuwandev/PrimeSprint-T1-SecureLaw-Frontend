@@ -18,6 +18,9 @@ import {
   SecureFlowPipelineService,
   SecureFlowPipelineStage,
 } from '../../services/secure-flow-pipeline-service';
+import { environment } from '../../../environments/environment';
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 
 interface SessionResponse {
   conversationId: string;
@@ -26,8 +29,10 @@ interface SessionResponse {
 interface ChatMessage {
   role: 'user' | 'ai';
   content: string;
+  html?: string;
   time: string;
   model?: string;
+  warnings?: Array<{ type: string; token: string; message: string }>;
 }
 
 interface ConversationSummary {
@@ -46,7 +51,8 @@ interface ConversationSummary {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Chat implements OnInit, AfterViewChecked {
-  @ViewChild('chatScroll') chatScrollRef!: ElementRef;
+  @ViewChild('chatScroll') chatScrollRef!: ElementRef<HTMLElement>;
+  @ViewChild('fileInput') fileInputRef?: ElementRef<HTMLInputElement>;
 
   conversationId = '';
   userInput = '';
@@ -69,8 +75,7 @@ export class Chat implements OnInit, AfterViewChecked {
   pipelineError: unknown = null;
   lastModelUsed: string | null = null;
 
-  // Set your backend API URL here
-  apiUrl = 'http://localhost:8080';
+  private readonly apiUrl = environment.apiUrl;
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -78,6 +83,11 @@ export class Chat implements OnInit, AfterViewChecked {
   private readonly pipeline = inject(SecureFlowPipelineService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly cdr = inject(ChangeDetectorRef);
+
+  constructor() {
+    // Treat single newlines as <br> and enable GitHub-flavored markdown.
+    marked.setOptions({ gfm: true, breaks: true });
+  }
 
   ngOnInit(): void {
     this.pipeline.state$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((state) => {
@@ -98,11 +108,24 @@ export class Chat implements OnInit, AfterViewChecked {
         this.conversationId = id;
         this.activeConversationId = id;
         const saved = this.allConversations.get(id);
-        this.messages = saved ? [...saved] : [];
+        this.messages = saved ? this.ensureRenderedMessages(saved) : [];
+        this.cdr.markForCheck();
       } else {
         this.startNewConversation();
       }
     });
+  }
+
+  private markdownToSafeHtml(markdown: string): string {
+    const raw = (marked.parse(markdown ?? '') as string) || '';
+    // Defense-in-depth: DOMPurify sanitizes, Angular will also sanitize on [innerHTML].
+    return DOMPurify.sanitize(raw, { USE_PROFILES: { html: true } });
+  }
+
+  private ensureRenderedMessages(messages: ChatMessage[]): ChatMessage[] {
+    return messages.map((m) =>
+      m.role === 'ai' && !m.html ? { ...m, html: this.markdownToSafeHtml(m.content) } : m,
+    );
   }
 
   ngAfterViewChecked(): void {
@@ -112,11 +135,51 @@ export class Chat implements OnInit, AfterViewChecked {
     }
   }
 
-  onFileSelected(event: any) {
-    const file = event.target.files[0];
-    if (file) {
-      this.selectedFile = file;
-      console.log('Selected file:', file.name);
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    const file = input?.files?.item(0) ?? null;
+    this.selectedFile = file;
+    this.cdr.markForCheck();
+  }
+
+  pipelineErrorText(): string | null {
+    const err = this.pipelineError;
+    if (!err) {
+      return null;
+    }
+
+    if (err instanceof Error) {
+      return err.message;
+    }
+
+    if (typeof err === 'string') {
+      return err;
+    }
+
+    // Common Angular HttpErrorResponse shape
+    if (typeof err === 'object' && err !== null && 'message' in err) {
+      const maybeMessage = (err as { message?: unknown }).message;
+      if (typeof maybeMessage === 'string' && maybeMessage.trim()) {
+        return maybeMessage;
+      }
+    }
+
+    return 'Something went wrong. Please try again.';
+  }
+
+  private createConversationId(): string {
+    try {
+      return crypto.randomUUID();
+    } catch {
+      return Math.random().toString(36).slice(2);
+    }
+  }
+
+  private resetFileInput(): void {
+    this.selectedFile = null;
+    const el = this.fileInputRef?.nativeElement;
+    if (el) {
+      el.value = '';
     }
   }
 
@@ -128,6 +191,8 @@ export class Chat implements OnInit, AfterViewChecked {
     switch (this.pipelineStage) {
       case 'UPLOADING':
         return 'Uploading…';
+      case 'EXTRACTING':
+        return 'Extracting text…';
       case 'DETECTING':
         return 'Detecting sensitive data…';
       case 'MASKING':
@@ -160,6 +225,15 @@ export class Chat implements OnInit, AfterViewChecked {
       },
       error: (err) => {
         console.error('Error creating conversation', err);
+
+        // UX: if backend is down, still allow local navigation.
+        const fallbackId = this.createConversationId();
+        this.conversationId = fallbackId;
+        this.activeConversationId = fallbackId;
+        this.messages = [];
+        this.shouldScroll = true;
+        this.router.navigate(['/chat', fallbackId]);
+
         this.isConversationLoading = false;
         this.cdr.markForCheck();
       },
@@ -167,7 +241,7 @@ export class Chat implements OnInit, AfterViewChecked {
   }
 
   switchConversation(conv: ConversationSummary): void {
-    this.messages = conv.messages || [];
+    this.messages = this.ensureRenderedMessages(conv.messages || []);
     this.conversationId = conv.conversationId;
     this.activeConversationId = conv.conversationId;
     this.shouldScroll = true;
@@ -194,10 +268,12 @@ export class Chat implements OnInit, AfterViewChecked {
           this.messages.push({
             role: 'ai',
             content: aiText,
+            html: this.markdownToSafeHtml(aiText),
             time: this.getTime(),
             model: this.lastModelUsed ?? undefined,
+            warnings: res.warnings?.length ? res.warnings : undefined,
           });
-          this.selectedFile = null;
+          this.resetFileInput();
           this.shouldScroll = true;
           this.updateSidebar(text, aiText);
           this.allConversations.set(this.conversationId, [...this.messages]);
@@ -205,15 +281,15 @@ export class Chat implements OnInit, AfterViewChecked {
         },
         error: (err) => {
           console.error('Pipeline error:', err);
-          const errMsg =
-            err instanceof Error ? err.message : 'Something went wrong. Please try again.';
+          const errMsg = this.pipelineErrorText() ?? 'Something went wrong. Please try again.';
           this.messages.push({
             role: 'ai',
             content: errMsg,
+            html: this.markdownToSafeHtml(errMsg),
             time: this.getTime(),
             model: this.lastModelUsed ?? undefined,
           });
-          this.selectedFile = null;
+          this.resetFileInput();
           this.shouldScroll = true;
           this.cdr.markForCheck();
         },
@@ -221,25 +297,22 @@ export class Chat implements OnInit, AfterViewChecked {
   }
 
   private updateSidebar(userText: string, aiText: string): void {
+    const preview = aiText.replaceAll(/\s+/g, ' ').trim();
     const existing = this.sidebarHistory.find((h) => h.conversationId === this.conversationId);
     if (existing) {
       existing.title = userText.substring(0, 30);
-      existing.preview = aiText.substring(0, 40);
+      existing.preview = preview.substring(0, 40);
       existing.messages = [...this.messages];
       existing.time = 'Now';
     } else {
       this.sidebarHistory.unshift({
         conversationId: this.conversationId,
         title: userText.substring(0, 30),
-        preview: aiText.substring(0, 40),
+        preview: preview.substring(0, 40),
         messages: [...this.messages],
         time: 'Now',
       } satisfies ConversationSummary);
     }
-  }
-
-  generateId(): string {
-    return Math.random().toString(36).substring(2, 10);
   }
 
   onKeyDown(event: KeyboardEvent): void {

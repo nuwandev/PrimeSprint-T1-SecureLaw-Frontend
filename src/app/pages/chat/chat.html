@@ -218,8 +218,18 @@
             </div>
             <div
               class="ai-bubble border px-4 py-3.5 text-sm text-b leading-relaxed transition-colors"
+              [style.word-break]="'break-word'"
             >
-              {{ msg.content }}
+              <div
+                *ngIf="msg.html; else plainAi"
+                class="chat-markdown"
+                [innerHTML]="msg.html"
+              ></div>
+              <ng-template #plainAi>{{ msg.content }}</ng-template>
+            </div>
+
+            <div *ngIf="msg.warnings?.length" class="mt-2 text-xs text-zinc-500 leading-relaxed">
+              <div *ngFor="let w of msg.warnings">Warning: {{ w.message }}</div>
             </div>
           </div>
         </div>
@@ -240,6 +250,8 @@
             </div>
             <div
               class="user-bubble px-4 py-3.5 text-sm text-zinc-100 leading-relaxed transition-colors"
+              [style.white-space]="'pre-wrap'"
+              [style.word-break]="'break-word'"
             >
               {{ msg.content }}
             </div>
@@ -286,7 +298,13 @@
           </label>
 
           <!-- Hidden File Input -->
-          <input type="file" id="fileInput" (change)="onFileSelected($event)" class="hidden" />
+          <input
+            #fileInput
+            type="file"
+            id="fileInput"
+            (change)="onFileSelected($event)"
+            class="hidden"
+          />
 
           <!-- Send Button (RIGHT) -->
           <button
@@ -301,6 +319,13 @@
         <!-- Show selected file -->
         <div *ngIf="selectedFile" class="text-xs text-zinc-400 mt-2">
           📄 {{ selectedFile.name }}
+        </div>
+
+        <div
+          *ngIf="pipelineStage === 'ERROR' && pipelineErrorText()"
+          class="text-xs text-red-400 mt-2"
+        >
+          {{ pipelineErrorText() }}
         </div>
       </div>
     </div>
