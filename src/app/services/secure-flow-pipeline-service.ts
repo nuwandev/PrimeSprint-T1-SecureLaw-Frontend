@@ -23,6 +23,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 export type SecureFlowPipelineStage =
   | 'IDLE'
   | 'UPLOADING'
+  | 'EXTRACTING'
   | 'DETECTING'
   | 'MASKING'
   | 'EXTERNAL_AI'
@@ -165,8 +166,10 @@ export class SecureFlowPipelineService {
       return throwError(() => new Error('Prompt is required'));
     }
 
-    this.logInfo('startPipeline()', {
-      promptLength: cleanedPrompt.length,
+    const pipelineId = this.createRequestId();
+
+    this.logInfo(`startPipeline (${pipelineId})`, {
+      prompt: cleanedPrompt,
       file: file ? { name: file.name, size: file.size, type: file.type } : null,
     });
 
@@ -190,9 +193,9 @@ export class SecureFlowPipelineService {
     const extracted$: Observable<{ uploadId?: string; extractedText: string | null }> = file
       ? this.extractTextApi.extract({ file }).pipe(
           tap((uploadRes) => {
-            this.logInfo('extractText response', uploadRes);
+            this.logInfo(`extractText (${pipelineId})`, uploadRes);
             this.patchState({
-              stage: 'DETECTING',
+              stage: 'EXTRACTING',
               loading: true,
               uploadId: uploadRes.uploadId,
               extractedText: uploadRes.textPreview,
@@ -206,24 +209,30 @@ export class SecureFlowPipelineService {
       : of({ extractedText: extractedTextFallback });
 
     return extracted$.pipe(
-      switchMap(({ extractedText }) =>
-        this.piiDetectApi
+      switchMap(({ extractedText }) => {
+        this.patchState({ stage: 'DETECTING', loading: true, extractedText });
+        return this.piiDetectApi
           .detect({
-            requestId: this.createRequestId(),
+            requestId: pipelineId,
             documentExtractedContent: extractedText,
             userPrompt: cleanedPrompt,
           })
-          .pipe(map((detectRes) => ({ detectRes, extractedText }))),
-      ),
+          .pipe(
+            tap((detectRes) => {
+              this.logInfo(`piiDetect (${pipelineId})`, detectRes);
+            }),
+            map((detectRes) => ({ detectRes, extractedText })),
+          );
+      }),
 
       switchMap(({ detectRes, extractedText }) => {
         // CHAT FLOW: no document and no PII
         if (extractedText === null && Array.isArray(detectRes) && detectRes.length === 0) {
-          this.logDebug('CHAT_FLOW_BYPASS', { extractedText, detectRes });
+          this.logDebug(`CHAT_FLOW_BYPASS (${pipelineId})`);
           this.patchState({ stage: 'EXTERNAL_AI', loading: true, sensitiveData: detectRes });
           return this.externalAiApi
             .process({
-              requestId: this.createRequestId(),
+              requestId: pipelineId,
               provider: 'gemini',
               maskedPrompt: cleanedPrompt,
               maskedDocument: '',
@@ -248,7 +257,7 @@ export class SecureFlowPipelineService {
                 },
               }),
               tap((extRes) => {
-                this.logInfo('externalAi response', extRes);
+                this.logInfo(`externalAi (${pipelineId})`, extRes);
                 this.patchState({
                   stage: 'DONE',
                   loading: false,
@@ -263,18 +272,18 @@ export class SecureFlowPipelineService {
         }
 
         // SECURE FLOW: document exists or PII detected
-        this.logDebug('SECURE_FLOW', { extractedText, detectRes });
+        this.logDebug(`SECURE_FLOW (${pipelineId})`);
         this.patchState({ stage: 'MASKING', loading: true, sensitiveData: detectRes });
         return this.maskApi
           .mask({
-            requestId: this.createRequestId(),
+            requestId: pipelineId,
             prompt: cleanedPrompt,
             document: extractedText ?? '',
             sensitiveData: detectRes,
           })
           .pipe(
             tap((maskRes) => {
-              this.logInfo('mask response', maskRes);
+              this.logInfo(`mask (${pipelineId})`, maskRes);
               this.patchState({
                 stage: 'EXTERNAL_AI',
                 loading: true,
@@ -285,7 +294,7 @@ export class SecureFlowPipelineService {
             switchMap((maskRes) =>
               this.externalAiApi
                 .process({
-                  requestId: this.createRequestId(),
+                  requestId: pipelineId,
                   provider: 'gemini',
                   maskedPrompt: maskRes.maskedPrompt,
                   maskedDocument: maskRes.maskedDocument,
@@ -310,7 +319,7 @@ export class SecureFlowPipelineService {
                     },
                   }),
                   tap((extRes) => {
-                    this.logInfo('externalAi response', extRes);
+                    this.logInfo(`externalAi (${pipelineId})`, extRes);
                     this.patchState({
                       stage: 'REHYDRATING',
                       loading: true,
@@ -337,12 +346,12 @@ export class SecureFlowPipelineService {
       tap((finalRes) => {
         // Only patch state if not already set to DONE (chat flow sets it earlier)
         if (this.state.value.stage !== 'DONE') {
-          this.logInfo('rehydrate response', finalRes);
+          this.logInfo(`rehydrate (${pipelineId})`, finalRes);
           this.patchState({ stage: 'DONE', loading: false, result: finalRes.finalText });
         }
       }),
       catchError((err) => {
-        this.logDebug('pipeline error', err);
+        this.logDebug(`pipeline error (${pipelineId})`, err);
         this.patchState({ stage: 'ERROR', loading: false, error: err });
         return throwError(() => err);
       }),
