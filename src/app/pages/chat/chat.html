@@ -253,7 +253,17 @@
               [style.white-space]="'pre-wrap'"
               [style.word-break]="'break-word'"
             >
-              {{ msg.content }}
+              <ng-container *ngIf="msg.segments?.length; else plainUser">
+                <ng-container *ngFor="let seg of msg.segments">
+                  <span
+                    [class.pii-highlight]="!!seg.piiLabel"
+                    [attr.title]="seg.piiLabel ? 'Sensitive: ' + seg.piiLabel : null"
+                    [attr.aria-label]="seg.piiLabel ? 'Sensitive: ' + seg.piiLabel : null"
+                    >{{ seg.text }}</span
+                  >
+                </ng-container>
+              </ng-container>
+              <ng-template #plainUser>{{ msg.content }}</ng-template>
             </div>
           </div>
         </div>

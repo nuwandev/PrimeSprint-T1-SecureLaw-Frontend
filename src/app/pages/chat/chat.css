@@ -259,6 +259,22 @@ textarea {
   margin-bottom: 0;
 }
 
+/* Prompt PII highlighting (rendered as text segments; tooltip via title) */
+.pii-highlight {
+  background: #f0fdf4;
+  color: #052e16;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  padding: 0 3px;
+  cursor: help;
+}
+
+#themeCheck:checked ~ .page-bg .pii-highlight {
+  background: #052e16;
+  color: #f0fdf4;
+  border-color: #166534;
+}
+
 .chat-markdown p {
   margin: 0.5rem 0;
 }

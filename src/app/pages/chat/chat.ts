@@ -16,11 +16,13 @@ import { HttpClient } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   SecureFlowPipelineService,
+  SecureFlowPipelineState,
   SecureFlowPipelineStage,
 } from '../../services/secure-flow-pipeline-service';
 import { environment } from '../../../environments/environment';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
+import { SensitiveDataItem } from '../../models/secure-flow.model';
 
 interface SessionResponse {
   conversationId: string;
@@ -33,6 +35,13 @@ interface ChatMessage {
   time: string;
   model?: string;
   warnings?: Array<{ type: string; token: string; message: string }>;
+
+  segments?: ChatTextSegment[];
+}
+
+interface ChatTextSegment {
+  text: string;
+  piiLabel?: string;
 }
 
 interface ConversationSummary {
@@ -75,6 +84,10 @@ export class Chat implements OnInit, AfterViewChecked {
   pipelineError: unknown = null;
   lastModelUsed: string | null = null;
 
+  private pendingPromptMessage: ChatMessage | null = null;
+  private pendingPipelineId: string | null = null;
+  private pendingConversationId: string | null = null;
+
   private readonly apiUrl = environment.apiUrl;
 
   private readonly route = inject(ActivatedRoute);
@@ -90,17 +103,21 @@ export class Chat implements OnInit, AfterViewChecked {
   }
 
   ngOnInit(): void {
-    this.pipeline.state$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((state) => {
-      this.pipelineStage = state.stage;
-      this.isPipelineLoading = state.loading;
-      this.pipelineError = state.error;
+    this.pipeline.state$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((state: SecureFlowPipelineState) => {
+        this.pipelineStage = state.stage;
+        this.isPipelineLoading = state.loading;
+        this.pipelineError = state.error;
 
-      this.lastModelUsed =
-        state.externalAiProvider && state.externalAiModel
-          ? `${state.externalAiProvider} / ${state.externalAiModel}`
-          : null;
-      this.cdr.markForCheck();
-    });
+        this.lastModelUsed =
+          state.externalAiProvider && state.externalAiModel
+            ? `${state.externalAiProvider} / ${state.externalAiModel}`
+            : null;
+
+        this.tryAttachPromptHighlights(state);
+        this.cdr.markForCheck();
+      });
 
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const id = params.get('conversationId');
@@ -109,11 +126,202 @@ export class Chat implements OnInit, AfterViewChecked {
         this.activeConversationId = id;
         const saved = this.allConversations.get(id);
         this.messages = saved ? this.ensureRenderedMessages(saved) : [];
+
+        // Prevent applying pending highlights to a different conversation.
+        this.clearPendingPromptTracking();
         this.cdr.markForCheck();
       } else {
         this.startNewConversation();
       }
     });
+  }
+
+  private clearPendingPromptTracking(): void {
+    this.pendingPromptMessage = null;
+    this.pendingPipelineId = null;
+    this.pendingConversationId = null;
+  }
+
+  private tryAttachPromptHighlights(state: SecureFlowPipelineState): void {
+    const pending = this.pendingPromptMessage;
+    if (!pending) {
+      return;
+    }
+
+    if (this.pendingConversationId && this.pendingConversationId !== this.conversationId) {
+      return;
+    }
+
+    const pipelineId = state.pipelineId ?? null;
+    if (!pipelineId) {
+      return;
+    }
+
+    if (!this.pendingPipelineId) {
+      this.pendingPipelineId = pipelineId;
+    }
+
+    if (this.pendingPipelineId !== pipelineId) {
+      return;
+    }
+
+    if (!pending.segments) {
+      const segments = this.buildPromptHighlightSegments(pending.content, state.sensitiveData);
+      if (segments) {
+        pending.segments = segments;
+      }
+    }
+
+    if (state.stage === 'DONE' || state.stage === 'ERROR') {
+      this.clearPendingPromptTracking();
+    }
+  }
+
+  private buildPromptHighlightSegments(
+    text: string,
+    sensitiveData: SensitiveDataItem[] | undefined,
+  ): ChatTextSegment[] | null {
+    if (!text || !sensitiveData?.length) {
+      return null;
+    }
+
+    const ranges = this.normalizePromptRanges(text, sensitiveData);
+    if (!ranges.length) {
+      return null;
+    }
+
+    const merged = this.mergeHighlightRanges(ranges);
+    const segments = this.rangesToSegments(text, merged);
+
+    // If something went wrong and we didn't actually split anything, skip segments.
+    if (segments.length <= 1 && !segments.some((s) => s.piiLabel)) {
+      return null;
+    }
+
+    return segments;
+  }
+
+  private normalizePromptRanges(
+    text: string,
+    sensitiveData: SensitiveDataItem[],
+  ): Array<{ start: number; end: number; type: string }> {
+    const promptItems = sensitiveData.filter((i) => this.isPromptSource(i.source));
+    const ranges: Array<{ start: number; end: number; type: string }> = [];
+
+    for (const item of promptItems) {
+      const range = this.normalizeRangeFromItem(text, item);
+      if (!range) {
+        continue;
+      }
+      ranges.push({ ...range, type: item.type });
+    }
+
+    ranges.sort((a, b) => {
+      const startDiff = a.start - b.start;
+      if (startDiff !== 0) {
+        return startDiff;
+      }
+      return a.end - b.end;
+    });
+
+    return ranges;
+  }
+
+  private mergeHighlightRanges(
+    ranges: Array<{ start: number; end: number; type: string }>,
+  ): Array<{ start: number; end: number; types: Set<string> }> {
+    const merged: Array<{ start: number; end: number; types: Set<string> }> = [];
+
+    for (const r of ranges) {
+      const last = merged.at(-1);
+      if (!last) {
+        merged.push({ start: r.start, end: r.end, types: new Set([r.type]) });
+        continue;
+      }
+
+      // Merge overlapping or adjacent ranges.
+      if (r.start <= last.end) {
+        last.end = Math.max(last.end, r.end);
+        last.types.add(r.type);
+        continue;
+      }
+
+      merged.push({ start: r.start, end: r.end, types: new Set([r.type]) });
+    }
+
+    return merged;
+  }
+
+  private rangesToSegments(
+    text: string,
+    merged: Array<{ start: number; end: number; types: Set<string> }>,
+  ): ChatTextSegment[] {
+    const segments: ChatTextSegment[] = [];
+    let cursor = 0;
+
+    for (const r of merged) {
+      if (cursor < r.start) {
+        segments.push({ text: text.slice(cursor, r.start) });
+      }
+
+      segments.push({ text: text.slice(r.start, r.end), piiLabel: Array.from(r.types).join(', ') });
+      cursor = r.end;
+    }
+
+    if (cursor < text.length) {
+      segments.push({ text: text.slice(cursor) });
+    }
+
+    return segments.filter((s) => s.text.length > 0);
+  }
+
+  private isPromptSource(source: string): boolean {
+    const s = (source ?? '').toLowerCase();
+    return s === 'prompt' || s === 'userprompt' || s === 'user_prompt' || s.includes('prompt');
+  }
+
+  private normalizeRangeFromItem(
+    text: string,
+    item: Pick<SensitiveDataItem, 'start' | 'end' | 'value'>,
+  ): { start: number; end: number } | null {
+    const len = text.length;
+    const rawStart = Number(item.start);
+    const rawEnd = Number(item.end);
+
+    if (!Number.isFinite(rawStart) || !Number.isFinite(rawEnd)) {
+      return null;
+    }
+
+    const value = typeof item.value === 'string' ? item.value : '';
+    const shouldTryMatch = value.length > 0 && value.length <= 256;
+
+    const candidates: Array<{ start: number; end: number }> = [
+      { start: rawStart, end: rawEnd }, // assume end is exclusive
+      { start: rawStart, end: rawEnd + 1 }, // end is inclusive
+      { start: rawStart - 1, end: rawEnd }, // start is 1-based
+      { start: rawStart - 1, end: rawEnd + 1 },
+    ];
+
+    const clamp = (n: number): number => Math.min(len, Math.max(0, n));
+    const asValid = (r: { start: number; end: number }): { start: number; end: number } | null => {
+      const start = clamp(r.start);
+      const end = clamp(r.end);
+      return end > start ? { start, end } : null;
+    };
+
+    if (shouldTryMatch) {
+      for (const c of candidates) {
+        const valid = asValid(c);
+        if (!valid) {
+          continue;
+        }
+        if (text.slice(valid.start, valid.end) === value) {
+          return valid;
+        }
+      }
+    }
+
+    return asValid({ start: rawStart, end: rawEnd });
   }
 
   private markdownToSafeHtml(markdown: string): string {
@@ -212,6 +420,7 @@ export class Chat implements OnInit, AfterViewChecked {
 
   startNewConversation(): void {
     this.isConversationLoading = true;
+    this.clearPendingPromptTracking();
 
     this.http.post<SessionResponse>(`${this.apiUrl}/chat/conversation`, {}).subscribe({
       next: (res: SessionResponse) => {
@@ -241,6 +450,7 @@ export class Chat implements OnInit, AfterViewChecked {
   }
 
   switchConversation(conv: ConversationSummary): void {
+    this.clearPendingPromptTracking();
     this.messages = this.ensureRenderedMessages(conv.messages || []);
     this.conversationId = conv.conversationId;
     this.activeConversationId = conv.conversationId;
@@ -252,7 +462,11 @@ export class Chat implements OnInit, AfterViewChecked {
     const text = this.userInput.trim();
     if (!text || this.isLoading) return;
 
-    this.messages.push({ role: 'user', content: text, time: this.getTime() });
+    const userMsg: ChatMessage = { role: 'user', content: text, time: this.getTime() };
+    this.messages.push(userMsg);
+    this.pendingPromptMessage = userMsg;
+    this.pendingPipelineId = null;
+    this.pendingConversationId = this.conversationId;
     this.userInput = '';
     this.shouldScroll = true;
 
