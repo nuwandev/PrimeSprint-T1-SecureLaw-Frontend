@@ -150,7 +150,6 @@ export class SecureFlowPipelineService {
   }
 
   private createRequestId(): string {
-    // Some environments (older browsers / restricted contexts) may not support crypto.randomUUID.
     try {
       return crypto.randomUUID();
     } catch {
@@ -162,8 +161,6 @@ export class SecureFlowPipelineService {
     if (!(err instanceof HttpErrorResponse)) {
       return false;
     }
-
-    // `0` = network error, `429` = rate limit, `5xx` = transient server/provider issues.
     if (err.status === 0 || err.status === 429) {
       return true;
     }
@@ -217,7 +214,6 @@ export class SecureFlowPipelineService {
   }
 
   private httpErrorToUserMessage(err: HttpErrorResponse): string {
-    // Prefer friendly messages over Angular's default `Http failure response...` string.
     switch (err.status) {
       case 0:
         return 'Unable to reach the server. Please check your connection and try again.';
@@ -276,9 +272,6 @@ export class SecureFlowPipelineService {
     }
 
     const pipelineId = this.createRequestId();
-
-    // Safe-by-design: this service is a singleton with shared state.
-    // Policy: single-flight (reject concurrent starts).
     this.activePipelineId = pipelineId;
 
     this.logInfo(`startPipeline (${pipelineId})`, {
@@ -340,7 +333,6 @@ export class SecureFlowPipelineService {
       }),
 
       switchMap(({ detectRes, extractedText }) => {
-        // CHAT FLOW: no document and no PII
         if (extractedText === null && detectRes.length === 0) {
           this.logDebug(`CHAT_FLOW_BYPASS (${pipelineId})`);
           this.patchStateFor(pipelineId, {
@@ -364,12 +356,9 @@ export class SecureFlowPipelineService {
                 externalAiModel: extRes.model,
               });
             }),
-            // For chat flow, wrap result to match RehydrateResponse
             map((extRes) => ({ finalText: extRes.tokenizedResponse }) as RehydrateResponse),
           );
         }
-
-        // SECURE FLOW: document exists or PII detected
         this.logDebug(`SECURE_FLOW (${pipelineId})`);
         this.patchStateFor(pipelineId, {
           stage: 'MASKING',
@@ -426,7 +415,6 @@ export class SecureFlowPipelineService {
           );
       }),
       tap((finalRes) => {
-        // Only patch state if not already set to DONE (chat flow sets it earlier)
         if (this.state.value.stage !== 'DONE') {
           this.logInfo(`rehydrate (${pipelineId})`, finalRes);
           this.patchStateFor(pipelineId, {

@@ -127,13 +127,11 @@ export class Chat implements OnInit, AfterViewInit, AfterViewChecked {
       } catch {}
     };
 
-    // For timer-driven animations (typing), force an immediate repaint.
     if (immediate) {
       run();
       return;
     }
 
-    // Coalesce multiple render requests into a single microtask.
     if (this.renderQueued) {
       return;
     }
@@ -148,14 +146,12 @@ export class Chat implements OnInit, AfterViewInit, AfterViewChecked {
         void Promise.resolve().then(run);
       }
     } catch {
-      // If microtask scheduling fails for any reason, don't leave renderQueued stuck.
       this.renderQueued = false;
       setTimeout(run, 0);
     }
   }
 
   constructor() {
-    // Treat single newlines as <br> and enable GitHub-flavored markdown.
     marked.setOptions({ gfm: true, breaks: true });
   }
 
@@ -181,7 +177,6 @@ export class Chat implements OnInit, AfterViewInit, AfterViewChecked {
             : null;
 
         this.tryAttachPromptHighlights(state);
-        // Pipeline stage changes should repaint immediately (OnPush + async flow).
         this.requestRender(true);
       });
 
@@ -193,8 +188,6 @@ export class Chat implements OnInit, AfterViewInit, AfterViewChecked {
         this.activeConversationId = id;
         const saved = this.allConversations.get(id);
         this.messages = saved ? this.ensureRenderedMessages(saved) : [];
-
-        // Prevent applying pending highlights to a different conversation.
         this.clearPendingPromptTracking();
         this.requestRender();
       } else {
@@ -270,7 +263,6 @@ export class Chat implements OnInit, AfterViewInit, AfterViewChecked {
       return;
     }
 
-    // Don’t steal navigation / submit keys.
     if (event.key === 'Enter' || event.key === 'Escape' || event.key === 'Tab') {
       return;
     }
@@ -282,7 +274,6 @@ export class Chat implements OnInit, AfterViewInit, AfterViewChecked {
 
     const target = event.target as HTMLElement | null;
     if (target) {
-      // If the user is interacting with a control (buttons/links), don't hijack keys like Space.
       const interactive = target.closest(
         'input, textarea, select, button, a, [role="button"], [contenteditable="true"], [contenteditable=""]',
       );
@@ -291,7 +282,6 @@ export class Chat implements OnInit, AfterViewInit, AfterViewChecked {
       }
     }
 
-    // If a user starts typing anywhere, focus the composer and keep the first key.
     if (event.key.length === 1) {
       event.preventDefault();
       this.focusComposer(false);
@@ -336,20 +326,16 @@ export class Chat implements OnInit, AfterViewInit, AfterViewChecked {
 
     message.typing = true;
     message.displayText = '';
-    // Always define html while typing so the template won't fall back to msg.content.
     message.html = this.markdownToSafeHtml('');
 
     const total = fullText.length;
     let index = 0;
 
-    // Markdown rendering + sanitizing is non-trivial work. Update at a steady pace
-    // so it feels like typing without causing layout jitter.
     const intervalMs = 30;
     const targetDurationMs = Math.min(3500, Math.max(900, total * 7));
     const ticks = Math.max(1, Math.floor(targetDurationMs / intervalMs));
     const charsPerTick = Math.max(1, Math.ceil(total / ticks));
 
-    // Render the first chunk immediately so the bubble doesn't appear blank.
     index = Math.min(total, charsPerTick);
     message.displayText = fullText.slice(0, index);
     message.html = this.markdownToSafeHtml(message.displayText);
@@ -357,7 +343,6 @@ export class Chat implements OnInit, AfterViewInit, AfterViewChecked {
     this.requestRender(true);
 
     this.activeTypingIntervalId = globalThis.setInterval(() => {
-      // If the message was removed (route change, conversation switch), stop cleanly.
       if (!this.messages.includes(message)) {
         this.stopTypingAnimation();
         return;
@@ -553,7 +538,6 @@ export class Chat implements OnInit, AfterViewInit, AfterViewChecked {
         continue;
       }
 
-      // Merge overlapping or adjacent ranges.
       if (r.start <= last.end) {
         last.end = Math.max(last.end, r.end);
         last.types.add(r.type);
@@ -610,9 +594,9 @@ export class Chat implements OnInit, AfterViewInit, AfterViewChecked {
     const shouldTryMatch = value.length > 0 && value.length <= 256;
 
     const candidates: Array<{ start: number; end: number }> = [
-      { start: rawStart, end: rawEnd }, // assume end is exclusive
-      { start: rawStart, end: rawEnd + 1 }, // end is inclusive
-      { start: rawStart - 1, end: rawEnd }, // start is 1-based
+      { start: rawStart, end: rawEnd },
+      { start: rawStart, end: rawEnd + 1 },
+      { start: rawStart - 1, end: rawEnd },
       { start: rawStart - 1, end: rawEnd + 1 },
     ];
 
@@ -640,8 +624,6 @@ export class Chat implements OnInit, AfterViewInit, AfterViewChecked {
 
   private markdownToSafeHtml(markdown: string): SafeHtml {
     const raw = (marked.parse(markdown ?? '') as string) || '';
-    // DOMPurify produces a safe HTML string; we then hand Angular a SafeHtml so it won't re-sanitize
-    // (which can strip content and log dev warnings).
     const cleaned = DOMPurify.sanitize(raw, { USE_PROFILES: { html: true } });
     return this.sanitizer.bypassSecurityTrustHtml(cleaned);
   }
