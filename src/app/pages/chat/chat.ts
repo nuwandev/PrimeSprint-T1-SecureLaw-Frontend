@@ -1,46 +1,98 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
+import {
+  AfterViewChecked,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  ElementRef,
+  OnInit,
+  ViewChild,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+  SecureFlowPipelineService,
+  SecureFlowPipelineStage,
+} from '../../services/secure-flow-pipeline-service';
 
 interface SessionResponse {
   conversationId: string;
 }
 
+interface ChatMessage {
+  role: 'user' | 'ai';
+  content: string;
+  time: string;
+  model?: string;
+}
+
+interface ConversationSummary {
+  conversationId: string;
+  title: string;
+  preview: string;
+  messages: ChatMessage[];
+  time: string;
+}
+
 @Component({
   selector: 'app-chat',
-  standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './chat.html',
-  styleUrls: ['./chat.css']
+  styleUrls: ['./chat.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Chat implements OnInit, AfterViewChecked {
   @ViewChild('chatScroll') chatScrollRef!: ElementRef;
 
   conversationId = '';
   userInput = '';
-  messages: any[] = [];
-  isLoading = false;
+  messages: ChatMessage[] = [];
 
-  sidebarHistory: any[] = [];
+  isConversationLoading = false;
+  isPipelineLoading = false;
+  get isLoading(): boolean {
+    return this.isConversationLoading || this.isPipelineLoading;
+  }
+
+  sidebarHistory: ConversationSummary[] = [];
   activeConversationId = '';
-  allConversations = new Map<string, any[]>();
+  allConversations = new Map<string, ChatMessage[]>();
   private shouldScroll = false;
 
   selectedFile: File | null = null;
 
+  pipelineStage: SecureFlowPipelineStage = 'IDLE';
+  pipelineError: unknown = null;
+  lastModelUsed: string | null = null;
+
   // Set your backend API URL here
   apiUrl = 'http://localhost:8080';
 
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private http: HttpClient
-  ) {}
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly http = inject(HttpClient);
+  private readonly pipeline = inject(SecureFlowPipelineService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe(params => {
+    this.pipeline.state$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((state) => {
+      this.pipelineStage = state.stage;
+      this.isPipelineLoading = state.loading;
+      this.pipelineError = state.error;
+
+      this.lastModelUsed =
+        state.externalAiProvider && state.externalAiModel
+          ? `${state.externalAiProvider} / ${state.externalAiModel}`
+          : null;
+      this.cdr.markForCheck();
+    });
+
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const id = params.get('conversationId');
       if (id) {
         this.conversationId = id;
@@ -68,8 +120,33 @@ export class Chat implements OnInit, AfterViewChecked {
     }
   }
 
+  pipelineStatusText(): string {
+    if (this.isConversationLoading) {
+      return 'Starting conversation…';
+    }
+
+    switch (this.pipelineStage) {
+      case 'UPLOADING':
+        return 'Uploading…';
+      case 'DETECTING':
+        return 'Detecting sensitive data…';
+      case 'MASKING':
+        return 'Masking sensitive data…';
+      case 'EXTERNAL_AI':
+        return 'Generating response…';
+      case 'REHYDRATING':
+        return 'Rehydrating response…';
+      case 'ERROR':
+        return 'Error';
+      case 'DONE':
+        return 'Done';
+      default:
+        return 'Working…';
+    }
+  }
+
   startNewConversation(): void {
-    this.isLoading = true;
+    this.isConversationLoading = true;
 
     this.http.post<SessionResponse>(`${this.apiUrl}/chat/conversation`, {}).subscribe({
       next: (res: SessionResponse) => {
@@ -78,16 +155,18 @@ export class Chat implements OnInit, AfterViewChecked {
         this.messages = [];
         this.shouldScroll = true;
         this.router.navigate(['/chat', this.conversationId]);
-        this.isLoading = false;
+        this.isConversationLoading = false;
+        this.cdr.markForCheck();
       },
       error: (err) => {
         console.error('Error creating conversation', err);
-        this.isLoading = false;
-      }
+        this.isConversationLoading = false;
+        this.cdr.markForCheck();
+      },
     });
   }
 
-  switchConversation(conv: any): void {
+  switchConversation(conv: ConversationSummary): void {
     this.messages = conv.messages || [];
     this.conversationId = conv.conversationId;
     this.activeConversationId = conv.conversationId;
@@ -101,30 +180,48 @@ export class Chat implements OnInit, AfterViewChecked {
 
     this.messages.push({ role: 'user', content: text, time: this.getTime() });
     this.userInput = '';
-    this.selectedFile = null;
-    this.isLoading = true;
     this.shouldScroll = true;
 
-    this.http.post(`${this.apiUrl}/chat/message`, { conversationId: this.conversationId, message: text }, { responseType: 'text' })
+    // Will be set from pipeline state once External AI responds.
+    this.lastModelUsed = null;
+
+    this.pipeline
+      .startPipeline(text, this.selectedFile)
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (aiText: string) => {
-          this.messages.push({ role: 'ai', content: aiText, time: this.getTime() });
-          this.isLoading = false;
+        next: (res) => {
+          const aiText = res.finalText ?? '';
+          this.messages.push({
+            role: 'ai',
+            content: aiText,
+            time: this.getTime(),
+            model: this.lastModelUsed ?? undefined,
+          });
+          this.selectedFile = null;
           this.shouldScroll = true;
           this.updateSidebar(text, aiText);
           this.allConversations.set(this.conversationId, [...this.messages]);
+          this.cdr.markForCheck();
         },
         error: (err) => {
-          console.error('Backend error:', err);
-          this.messages.push({ role: 'ai', content: 'Something went wrong. Please try again.', time: this.getTime() });
-          this.isLoading = false;
+          console.error('Pipeline error:', err);
+          const errMsg =
+            err instanceof Error ? err.message : 'Something went wrong. Please try again.';
+          this.messages.push({
+            role: 'ai',
+            content: errMsg,
+            time: this.getTime(),
+            model: this.lastModelUsed ?? undefined,
+          });
+          this.selectedFile = null;
           this.shouldScroll = true;
-        }
+          this.cdr.markForCheck();
+        },
       });
   }
 
   private updateSidebar(userText: string, aiText: string): void {
-    const existing = this.sidebarHistory.find(h => h.conversationId === this.conversationId);
+    const existing = this.sidebarHistory.find((h) => h.conversationId === this.conversationId);
     if (existing) {
       existing.title = userText.substring(0, 30);
       existing.preview = aiText.substring(0, 40);
@@ -136,8 +233,8 @@ export class Chat implements OnInit, AfterViewChecked {
         title: userText.substring(0, 30),
         preview: aiText.substring(0, 40),
         messages: [...this.messages],
-        time: 'Now'
-      });
+        time: 'Now',
+      } satisfies ConversationSummary);
     }
   }
 

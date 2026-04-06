@@ -213,6 +213,7 @@
           <div class="flex-1">
             <div class="flex items-baseline gap-2 mb-1.5">
               <span class="text-xs font-medium msg-name">Lex AI</span>
+              <span *ngIf="msg.model" class="text-xs text-zinc-500">{{ msg.model }}</span>
               <span class="text-xs msg-time">{{ msg.time }}</span>
             </div>
             <div
@@ -253,7 +254,7 @@
         <div class="flex-1">
           <div class="flex items-baseline gap-2 mb-1.5">
             <span class="text-xs font-medium msg-name">Lex AI</span>
-            <span class="text-xs italic gen-text">generating response…</span>
+            <span class="text-xs italic gen-text">{{ pipelineStatusText() }}</span>
           </div>
           <div class="ai-bubble border px-4 py-4 inline-flex items-center gap-1.5">
             <span class="dot"></span><span class="dot"></span><span class="dot"></span>
@@ -290,10 +291,10 @@
           <!-- Send Button (RIGHT) -->
           <button
             (click)="sendMessage()"
-            [disabled]="isLoading || (!userInput.trim() && !selectedFile)"
+            [disabled]="isLoading || !userInput.trim()"
             class="btn-send absolute bottom-3 right-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-white px-4 py-1.5 rounded-lg text-sm shadow transition"
           >
-            {{ isLoading ? 'Sending...' : 'Send' }}
+            {{ isPipelineLoading ? 'Sending...' : 'Send' }}
           </button>
         </div>
 
