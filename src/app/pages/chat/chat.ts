@@ -139,10 +139,18 @@ export class Chat implements OnInit, AfterViewInit, AfterViewChecked {
     }
     this.renderQueued = true;
 
-    if (typeof queueMicrotask === 'function') {
-      queueMicrotask(run);
-    } else {
-      void Promise.resolve().then(run);
+    try {
+      const qm = (globalThis as unknown as { queueMicrotask?: (cb: () => void) => void })
+        .queueMicrotask;
+      if (typeof qm === 'function') {
+        qm(run);
+      } else {
+        void Promise.resolve().then(run);
+      }
+    } catch {
+      // If microtask scheduling fails for any reason, don't leave renderQueued stuck.
+      this.renderQueued = false;
+      setTimeout(run, 0);
     }
   }
 
@@ -173,7 +181,8 @@ export class Chat implements OnInit, AfterViewInit, AfterViewChecked {
             : null;
 
         this.tryAttachPromptHighlights(state);
-        this.requestRender();
+        // Pipeline stage changes should repaint immediately (OnPush + async flow).
+        this.requestRender(true);
       });
 
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
