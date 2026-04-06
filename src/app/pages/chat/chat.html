@@ -288,8 +288,14 @@
             [style.word-break]="'break-word'"
             aria-live="polite"
           >
-            <span class="loading-status">{{ pipelineStatusText() }}</span
-            ><span class="loading-ellipsis" aria-hidden="true"></span>
+            <span class="loading-line">
+              <span class="loading-status">{{ pipelineStatusText() }}</span>
+              <span class="loading-dots" aria-hidden="true">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+              </span>
+            </span>
           </div>
         </div>
       </div>
