@@ -37,6 +37,8 @@ interface ChatMessage {
   warnings?: Array<{ type: string; token: string; message: string }>;
 
   segments?: ChatTextSegment[];
+
+  promptPiiSummary?: string;
 }
 
 interface ChatTextSegment {
@@ -97,6 +99,23 @@ export class Chat implements OnInit, AfterViewChecked {
   private readonly destroyRef = inject(DestroyRef);
   private readonly cdr = inject(ChangeDetectorRef);
 
+  private requestRender(): void {
+    this.cdr.markForCheck();
+    const run = () => {
+      try {
+        this.cdr.detectChanges();
+      } catch {}
+    };
+
+    // In some environments, async work may complete without a change-detection tick.
+    // Scheduling a detectChanges makes the UI feel immediate (e.g., without waiting for user input).
+    if (typeof queueMicrotask === 'function') {
+      queueMicrotask(run);
+    } else {
+      void Promise.resolve().then(run);
+    }
+  }
+
   constructor() {
     // Treat single newlines as <br> and enable GitHub-flavored markdown.
     marked.setOptions({ gfm: true, breaks: true });
@@ -116,7 +135,7 @@ export class Chat implements OnInit, AfterViewChecked {
             : null;
 
         this.tryAttachPromptHighlights(state);
-        this.cdr.markForCheck();
+        this.requestRender();
       });
 
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
@@ -129,7 +148,7 @@ export class Chat implements OnInit, AfterViewChecked {
 
         // Prevent applying pending highlights to a different conversation.
         this.clearPendingPromptTracking();
-        this.cdr.markForCheck();
+        this.requestRender();
       } else {
         this.startNewConversation();
       }
@@ -172,9 +191,53 @@ export class Chat implements OnInit, AfterViewChecked {
       }
     }
 
+    if (!pending.promptPiiSummary) {
+      const summary = this.buildPromptPiiSummary(state.sensitiveData);
+      if (summary) {
+        pending.promptPiiSummary = summary;
+      }
+    }
+
     if (state.stage === 'DONE' || state.stage === 'ERROR') {
       this.clearPendingPromptTracking();
     }
+  }
+
+  private buildPromptPiiSummary(sensitiveData: SensitiveDataItem[] | undefined): string | null {
+    if (!sensitiveData?.length) {
+      return null;
+    }
+
+    const promptItems = sensitiveData.filter((i) => this.isPromptSource(i.source));
+    if (!promptItems.length) {
+      return null;
+    }
+
+    const typeCounts = new Map<string, number>();
+    for (const item of promptItems) {
+      const t = (item.type ?? '').trim();
+      if (!t) {
+        continue;
+      }
+      typeCounts.set(t, (typeCounts.get(t) ?? 0) + 1);
+    }
+
+    const parts = Array.from(typeCounts.entries())
+      .sort((a, b) => {
+        const countDiff = b[1] - a[1];
+        if (countDiff !== 0) {
+          return countDiff;
+        }
+        return a[0].localeCompare(b[0]);
+      })
+      .map(([type, count]) => (count > 1 ? `${type} (${count})` : type));
+
+    if (!parts.length) {
+      return null;
+    }
+
+    const total = promptItems.length;
+    return `${total} item${total === 1 ? '' : 's'} — ${parts.join(', ')}`;
   }
 
   private buildPromptHighlightSegments(
@@ -347,7 +410,7 @@ export class Chat implements OnInit, AfterViewChecked {
     const input = event.target as HTMLInputElement | null;
     const file = input?.files?.item(0) ?? null;
     this.selectedFile = file;
-    this.cdr.markForCheck();
+    this.requestRender();
   }
 
   pipelineErrorText(): string | null {
@@ -422,6 +485,8 @@ export class Chat implements OnInit, AfterViewChecked {
     this.isConversationLoading = true;
     this.clearPendingPromptTracking();
 
+    this.requestRender();
+
     this.http.post<SessionResponse>(`${this.apiUrl}/chat/conversation`, {}).subscribe({
       next: (res: SessionResponse) => {
         this.conversationId = res.conversationId;
@@ -430,7 +495,7 @@ export class Chat implements OnInit, AfterViewChecked {
         this.shouldScroll = true;
         this.router.navigate(['/chat', this.conversationId]);
         this.isConversationLoading = false;
-        this.cdr.markForCheck();
+        this.requestRender();
       },
       error: (err) => {
         console.error('Error creating conversation', err);
@@ -444,7 +509,7 @@ export class Chat implements OnInit, AfterViewChecked {
         this.router.navigate(['/chat', fallbackId]);
 
         this.isConversationLoading = false;
-        this.cdr.markForCheck();
+        this.requestRender();
       },
     });
   }
@@ -470,6 +535,9 @@ export class Chat implements OnInit, AfterViewChecked {
     this.userInput = '';
     this.shouldScroll = true;
 
+    // Ensure the sent message renders immediately.
+    this.requestRender();
+
     // Will be set from pipeline state once External AI responds.
     this.lastModelUsed = null;
 
@@ -491,7 +559,7 @@ export class Chat implements OnInit, AfterViewChecked {
           this.shouldScroll = true;
           this.updateSidebar(text, aiText);
           this.allConversations.set(this.conversationId, [...this.messages]);
-          this.cdr.markForCheck();
+          this.requestRender();
         },
         error: (err) => {
           console.error('Pipeline error:', err);
@@ -505,7 +573,7 @@ export class Chat implements OnInit, AfterViewChecked {
           });
           this.resetFileInput();
           this.shouldScroll = true;
-          this.cdr.markForCheck();
+          this.requestRender();
         },
       });
   }

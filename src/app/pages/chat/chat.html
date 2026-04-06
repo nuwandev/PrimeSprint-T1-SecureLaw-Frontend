@@ -258,12 +258,18 @@
                   <span
                     [class.pii-highlight]="!!seg.piiLabel"
                     [attr.title]="seg.piiLabel ? 'Sensitive: ' + seg.piiLabel : null"
+                    [attr.data-pii]="seg.piiLabel ? 'Sensitive: ' + seg.piiLabel : null"
+                    [attr.tabindex]="seg.piiLabel ? 0 : null"
                     [attr.aria-label]="seg.piiLabel ? 'Sensitive: ' + seg.piiLabel : null"
                     >{{ seg.text }}</span
                   >
                 </ng-container>
               </ng-container>
               <ng-template #plainUser>{{ msg.content }}</ng-template>
+            </div>
+
+            <div *ngIf="msg.promptPiiSummary" class="mt-1 text-xs text-zinc-500 text-right">
+              Sensitive detected: {{ msg.promptPiiSummary }}
             </div>
           </div>
         </div>

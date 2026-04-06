@@ -261,6 +261,8 @@ textarea {
 
 /* Prompt PII highlighting (rendered as text segments; tooltip via title) */
 .pii-highlight {
+  position: relative;
+  display: inline-block;
   background: #f0fdf4;
   color: #052e16;
   border: 1px solid #bbf7d0;
@@ -269,10 +271,38 @@ textarea {
   cursor: help;
 }
 
+.pii-highlight:focus {
+  outline: 2px solid #bbf7d0;
+  outline-offset: 2px;
+}
+
+.pii-highlight:hover::after,
+.pii-highlight:focus::after,
+.pii-highlight:focus-visible::after {
+  content: attr(data-pii);
+  position: absolute;
+  right: 0;
+  bottom: 125%;
+  z-index: 10;
+  background: #18181b;
+  color: #ffffff;
+  border: 1px solid #3f3f46;
+  border-radius: 10px;
+  padding: 6px 8px;
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 #themeCheck:checked ~ .page-bg .pii-highlight {
   background: #052e16;
   color: #f0fdf4;
   border-color: #166534;
+}
+
+#themeCheck:checked ~ .page-bg .pii-highlight:focus {
+  outline-color: #166534;
 }
 
 .chat-markdown p {
