@@ -1,5 +1,6 @@
 import {
   AfterViewChecked,
+  AfterViewInit,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
@@ -65,9 +66,10 @@ interface ConversationSummary {
   styleUrls: ['./chat.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Chat implements OnInit, AfterViewChecked {
+export class Chat implements OnInit, AfterViewInit, AfterViewChecked {
   @ViewChild('chatScroll') chatScrollRef!: ElementRef<HTMLElement>;
   @ViewChild('fileInput') fileInputRef?: ElementRef<HTMLInputElement>;
+  @ViewChild('composer') composerRef?: ElementRef<HTMLTextAreaElement>;
 
   conversationId = '';
   userInput = '';
@@ -111,6 +113,9 @@ export class Chat implements OnInit, AfterViewChecked {
   private readonly sanitizer = inject(DomSanitizer);
 
   private renderQueued = false;
+  private composerKeyHandlerBound = false;
+  private readonly onGlobalKeyDownBound = (event: KeyboardEvent): void =>
+    this.onGlobalKeyDown(event);
 
   private requestRender(immediate = false): void {
     this.cdr.markForCheck();
@@ -146,8 +151,14 @@ export class Chat implements OnInit, AfterViewChecked {
     marked.setOptions({ gfm: true, breaks: true });
   }
 
+  ngAfterViewInit(): void {
+    this.bindComposerKeyHandler();
+    this.focusComposer(false);
+  }
+
   ngOnInit(): void {
     this.destroyRef.onDestroy(() => this.stopTypingAnimation(true));
+    this.destroyRef.onDestroy(() => this.unbindComposerKeyHandler());
 
     this.pipeline.state$
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -181,6 +192,108 @@ export class Chat implements OnInit, AfterViewChecked {
         this.startNewConversation();
       }
     });
+  }
+
+  private bindComposerKeyHandler(): void {
+    if (this.composerKeyHandlerBound) {
+      return;
+    }
+    this.composerKeyHandlerBound = true;
+    globalThis.window.addEventListener('keydown', this.onGlobalKeyDownBound, true);
+  }
+
+  private unbindComposerKeyHandler(): void {
+    if (!this.composerKeyHandlerBound) {
+      return;
+    }
+    this.composerKeyHandlerBound = false;
+    globalThis.window.removeEventListener('keydown', this.onGlobalKeyDownBound, true);
+  }
+
+  private isEditableElement(el: Element | null): boolean {
+    if (!el) {
+      return false;
+    }
+
+    const tag = (el as HTMLElement).tagName?.toLowerCase?.() ?? '';
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') {
+      return true;
+    }
+
+    if ((el as HTMLElement).isContentEditable) {
+      return true;
+    }
+
+    return false;
+  }
+
+  private focusComposer(smoothScroll = true): void {
+    const el = this.composerRef?.nativeElement;
+    if (!el) {
+      return;
+    }
+
+    const run = () => {
+      try {
+        el.focus({ preventScroll: !smoothScroll });
+        const len = el.value.length;
+        el.setSelectionRange(len, len);
+      } catch {
+        try {
+          el.focus();
+        } catch {}
+      }
+    };
+
+    if (typeof queueMicrotask === 'function') {
+      queueMicrotask(run);
+    } else {
+      void Promise.resolve().then(run);
+    }
+  }
+
+  private onGlobalKeyDown(event: KeyboardEvent): void {
+    if (event.defaultPrevented) {
+      return;
+    }
+
+    if (event.ctrlKey || event.metaKey || event.altKey) {
+      return;
+    }
+
+    // Don’t steal navigation / submit keys.
+    if (event.key === 'Enter' || event.key === 'Escape' || event.key === 'Tab') {
+      return;
+    }
+
+    const activeEl = globalThis.document?.activeElement;
+    if (this.isEditableElement(activeEl)) {
+      return;
+    }
+
+    const target = event.target as HTMLElement | null;
+    if (target) {
+      // If the user is interacting with a control (buttons/links), don't hijack keys like Space.
+      const interactive = target.closest(
+        'input, textarea, select, button, a, [role="button"], [contenteditable="true"], [contenteditable=""]',
+      );
+      if (interactive) {
+        return;
+      }
+    }
+
+    // If a user starts typing anywhere, focus the composer and keep the first key.
+    if (event.key.length === 1) {
+      event.preventDefault();
+      this.focusComposer(false);
+      this.userInput = (this.userInput ?? '') + event.key;
+      this.requestRender(true);
+    } else if (event.key === 'Backspace') {
+      event.preventDefault();
+      this.focusComposer(false);
+      this.userInput = (this.userInput ?? '').slice(0, -1);
+      this.requestRender(true);
+    }
   }
 
   private stopTypingAnimation(finalizeActiveMessage = false): void {
