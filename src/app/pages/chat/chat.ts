@@ -482,28 +482,28 @@ export class Chat implements OnInit, AfterViewChecked {
 
   pipelineStatusText(): string {
     if (this.isConversationLoading) {
-      return 'Starting conversation…';
+      return 'Starting conversation';
     }
 
     switch (this.pipelineStage) {
       case 'UPLOADING':
-        return 'Uploading…';
+        return 'Uploading';
       case 'EXTRACTING':
-        return 'Extracting text…';
+        return 'Extracting text';
       case 'DETECTING':
-        return 'Detecting sensitive data…';
+        return 'Detecting sensitive data';
       case 'MASKING':
-        return 'Masking sensitive data…';
+        return 'Masking sensitive data';
       case 'EXTERNAL_AI':
-        return 'Generating response…';
+        return 'Generating response';
       case 'REHYDRATING':
-        return 'Rehydrating response…';
+        return 'Rehydrating response';
       case 'ERROR':
         return 'Error';
       case 'DONE':
         return 'Done';
       default:
-        return 'Working…';
+        return 'Working';
     }
   }
 
@@ -636,7 +636,7 @@ export class Chat implements OnInit, AfterViewChecked {
     } catch {}
   }
 
-  private getTime(): string {
+  getTime(): string {
     return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 }

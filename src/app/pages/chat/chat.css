@@ -49,11 +49,16 @@
   background: #f4f4f5;
   border-color: #e4e4e7;
   border-radius: 16px;
+  width: fit-content;
+  max-width: 100%;
 }
 .user-bubble {
   background: #18181b;
   border-radius: 16px;
   color: #fff;
+  width: fit-content;
+  max-width: 100%;
+  margin-left: auto;
 }
 .btn-send {
   background: #18181b;
@@ -257,6 +262,28 @@ textarea {
 }
 .chat-markdown > :last-child {
   margin-bottom: 0;
+}
+
+/* Loading row: show stage text inside the AI bubble */
+.loading-status {
+  font-weight: 500;
+}
+
+.loading-ellipsis {
+  display: inline-block;
+  width: 0ch;
+  overflow: hidden;
+  vertical-align: bottom;
+  animation: loadingEllipsis 1.1s steps(4, end) infinite;
+}
+.loading-ellipsis::before {
+  content: '...';
+}
+
+@keyframes loadingEllipsis {
+  to {
+    width: 3ch;
+  }
 }
 
 /* Prompt PII highlighting (rendered as text segments; tooltip via title) */

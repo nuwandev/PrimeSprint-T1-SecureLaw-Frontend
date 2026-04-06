@@ -200,7 +200,7 @@
             class="border border-zinc-700 px-4 py-3 text-left text-sm text-zinc-400 hover:border-zinc-500 hover:text-white transition-colors"
           >
             <p class="font-medium text-zinc-300 mb-0.5">Statute of Limitations</p>
-            <p class="text-xs text-zinc-6000">What is the statute of limitations?</p>
+            <p class="text-xs text-zinc-600">What is the statute of limitations?</p>
           </button>
         </div>
       </div>
@@ -244,9 +244,9 @@
             <span class="text-xs font-medium">EV</span>
           </div>
           <div class="flex-1">
-            <div class="flex items-baseline gap-2 mb-1.5 justify-end">
-              <span class="text-xs msg-time">{{ msg.time }}</span>
+            <div class="flex items-center gap-2 mb-1.5 justify-end">
               <span class="text-xs font-medium msg-name">You</span>
+              <span class="text-xs msg-time">{{ msg.time }}</span>
             </div>
             <div
               class="user-bubble px-4 py-3.5 text-sm text-zinc-100 leading-relaxed transition-colors"
@@ -280,12 +280,16 @@
           <span class="text-white text-xs font-bold">AI</span>
         </div>
         <div class="flex-1">
-          <div class="flex items-baseline gap-2 mb-1.5">
+          <div class="flex items-center gap-2 mb-1.5">
             <span class="text-xs font-medium msg-name">Lex AI</span>
-            <span class="text-xs italic gen-text">{{ pipelineStatusText() }}</span>
           </div>
-          <div class="ai-bubble border px-4 py-4 inline-flex items-center gap-1.5">
-            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <div
+            class="ai-bubble border px-4 py-3.5 text-sm text-b leading-relaxed transition-colors"
+            [style.word-break]="'break-word'"
+            aria-live="polite"
+          >
+            <span class="loading-status">{{ pipelineStatusText() }}</span
+            ><span class="loading-ellipsis" aria-hidden="true"></span>
           </div>
         </div>
       </div>
@@ -308,7 +312,9 @@
           <!-- 📎 File Upload Button (LEFT) -->
           <label
             for="fileInput"
-            class="absolute bottom-3 left-3 cursor-pointer bg-zinc-800 hover:bg-zinc-700 text-white px-2 py-1 rounded-md text-sm transition"
+            class="absolute bottom-3 left-3 cursor-pointer bg-input border border-s text-h w-9 h-9 flex items-center justify-center rounded-lg transition-opacity hover:opacity-90"
+            aria-label="Attach a file"
+            title="Attach a file"
           >
             📎
           </label>
@@ -326,7 +332,7 @@
           <button
             (click)="sendMessage()"
             [disabled]="isLoading || !userInput.trim()"
-            class="btn-send absolute bottom-3 right-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-white px-4 py-1.5 rounded-lg text-sm shadow transition"
+            class="btn-send absolute bottom-3 right-3 border border-zinc-700 px-4 py-1.5 rounded-lg text-sm shadow transition"
           >
             {{ isPipelineLoading ? 'Sending...' : 'Send' }}
           </button>
