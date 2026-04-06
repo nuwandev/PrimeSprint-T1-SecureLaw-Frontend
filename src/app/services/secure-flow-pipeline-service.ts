@@ -212,6 +212,58 @@ export class SecureFlowPipelineService {
       );
   }
 
+  private isTransientServerStatus(status: number): boolean {
+    return status >= 500 && status <= 504;
+  }
+
+  private httpErrorToUserMessage(err: HttpErrorResponse): string {
+    // Prefer friendly messages over Angular's default `Http failure response...` string.
+    switch (err.status) {
+      case 0:
+        return 'Unable to reach the server. Please check your connection and try again.';
+      case 413:
+        return 'The uploaded file is too large. Please try a smaller file.';
+      case 415:
+        return 'Unsupported file type. Please upload a supported document format.';
+      case 429:
+        return 'Too many requests. Please wait a moment and try again.';
+      default:
+        return this.isTransientServerStatus(err.status)
+          ? 'Server error. Please try again in a moment.'
+          : 'Request failed. Please try again.';
+    }
+  }
+
+  private unknownToMessage(err: unknown): string | null {
+    if (typeof err === 'string') {
+      const trimmed = err.trim();
+      return trimmed || null;
+    }
+
+    if (typeof err === 'object' && err !== null && 'message' in err) {
+      const maybeMessage = (err as { message?: unknown }).message;
+      if (typeof maybeMessage === 'string') {
+        const trimmed = maybeMessage.trim();
+        return trimmed || null;
+      }
+    }
+
+    return null;
+  }
+
+  private toUserFriendlyError(err: unknown): Error {
+    if (err instanceof HttpErrorResponse) {
+      return new Error(this.httpErrorToUserMessage(err));
+    }
+
+    if (err instanceof Error) {
+      return err;
+    }
+
+    const msg = this.unknownToMessage(err);
+    return new Error(msg ?? 'Something went wrong. Please try again.');
+  }
+
   startPipeline(prompt: string, file?: File | null): Observable<RehydrateResponse> {
     if (this.state.value.loading) {
       return throwError(() => new Error('A request is already in progress. Please wait.'));
@@ -386,8 +438,9 @@ export class SecureFlowPipelineService {
       }),
       catchError((err) => {
         this.logDebug(`pipeline error (${pipelineId})`, err);
-        this.patchStateFor(pipelineId, { stage: 'ERROR', loading: false, error: err });
-        return throwError(() => err);
+        const friendly = this.toUserFriendlyError(err);
+        this.patchStateFor(pipelineId, { stage: 'ERROR', loading: false, error: friendly });
+        return throwError(() => friendly);
       }),
       finalize(() => {
         if (this.activePipelineId === pipelineId) {

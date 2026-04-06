@@ -12,7 +12,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   SecureFlowPipelineService,
@@ -413,10 +413,39 @@ export class Chat implements OnInit, AfterViewChecked {
     this.requestRender();
   }
 
+  private httpErrorToUserMessage(err: HttpErrorResponse): string {
+    switch (err.status) {
+      case 0:
+        return 'Unable to reach the server. Please check your connection and try again.';
+      case 429:
+        return 'Too many requests. Please wait a moment and try again.';
+      default:
+        return err.status >= 500 && err.status <= 504
+          ? 'Server error. Please try again in a moment.'
+          : 'Request failed. Please try again.';
+    }
+  }
+
+  private errorLikeMessage(err: unknown): string | null {
+    if (typeof err === 'object' && err !== null && 'message' in err) {
+      const maybeMessage = (err as { message?: unknown }).message;
+      if (typeof maybeMessage === 'string') {
+        const trimmed = maybeMessage.trim();
+        return trimmed || null;
+      }
+    }
+
+    return null;
+  }
+
   pipelineErrorText(): string | null {
     const err = this.pipelineError;
     if (!err) {
       return null;
+    }
+
+    if (err instanceof HttpErrorResponse) {
+      return this.httpErrorToUserMessage(err);
     }
 
     if (err instanceof Error) {
@@ -427,12 +456,9 @@ export class Chat implements OnInit, AfterViewChecked {
       return err;
     }
 
-    // Common Angular HttpErrorResponse shape
-    if (typeof err === 'object' && err !== null && 'message' in err) {
-      const maybeMessage = (err as { message?: unknown }).message;
-      if (typeof maybeMessage === 'string' && maybeMessage.trim()) {
-        return maybeMessage;
-      }
+    const message = this.errorLikeMessage(err);
+    if (message) {
+      return message;
     }
 
     return 'Something went wrong. Please try again.';
