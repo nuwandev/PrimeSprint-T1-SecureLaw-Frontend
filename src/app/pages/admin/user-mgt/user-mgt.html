@@ -1,0 +1,826 @@
+<div class="page bg-page bg-white text-zinc-900 min-h-screen transition-colors duration-200">
+  <app-nav-bar />
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8 sm:mb-10">
+      <div>
+        <p
+          class="text-xs tracking-widest uppercase t-label text-zinc-400 font-medium mb-2 transition-colors duration-200">
+          Administration
+        </p>
+        <h1
+          class="serif text-3xl sm:text-4xl font-semibold t-head text-zinc-900 leading-tight transition-colors duration-200">
+          User Management
+        </h1>
+        <p class="text-sm t-sub text-zinc-500 mt-2 max-w-md leading-relaxed transition-colors duration-200">
+          Manage user accounts, assign roles, and control access permissions across the firm.
+        </p>
+      </div>
+      <button type="button" (click)="openCreateUserModel()"
+        class="btn-primary flex items-center justify-center gap-2 bg-zinc-900 text-white text-sm px-5 py-3 hover:bg-zinc-700 tracking-wide w-full sm:w-auto shrink-0 transition-colors duration-200">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
+        Create User
+      </button>
+    </div>
+
+    <div
+      class="grid grid-cols-2 sm:grid-cols-4 gap-px bg-zinc-200 b-std border border-zinc-200 mb-6 sm:mb-8 transition-colors duration-200">
+      <div class="stat-card bg-white px-4 sm:px-6 py-4 sm:py-5 transition-colors duration-200">
+        <p class="text-xs t-label text-zinc-400 tracking-widest uppercase mb-1 transition-colors duration-200">
+          Total Users
+        </p>
+        <p class="serif text-2xl sm:text-3xl font-semibold t-head text-zinc-900 transition-colors duration-200">
+          {{ totalElements() }}
+        </p>
+      </div>
+      <div class="stat-card bg-white px-4 sm:px-6 py-4 sm:py-5 transition-colors duration-200">
+        <p class="text-xs t-label text-zinc-400 tracking-widest uppercase mb-1 transition-colors duration-200">
+          Active
+        </p>
+        <p class="serif text-2xl sm:text-3xl font-semibold t-head text-zinc-900 transition-colors duration-200">
+          {{ activeOnPage() }}
+        </p>
+      </div>
+      <div class="stat-card bg-white px-4 sm:px-6 py-4 sm:py-5 transition-colors duration-200">
+        <p class="text-xs t-label text-zinc-400 tracking-widest uppercase mb-1 transition-colors duration-200">
+          Senior
+        </p>
+        <p class="serif text-2xl sm:text-3xl font-semibold t-head text-zinc-900 transition-colors duration-200">
+          {{ seniorOnPage() }}
+        </p>
+      </div>
+      <div class="stat-card bg-white px-4 sm:px-6 py-4 sm:py-5 transition-colors duration-200">
+        <p class="text-xs t-label text-zinc-400 tracking-widest uppercase mb-1 transition-colors duration-200">
+          Disabled
+        </p>
+        <p class="serif text-2xl sm:text-3xl font-semibold t-head text-zinc-900 transition-colors duration-200">
+          {{ disabledOnPage() }}
+        </p>
+      </div>
+    </div>
+
+    <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-5">
+      <div class="relative flex-1 sm:max-w-sm">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" fill="none"
+          stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8" />
+          <path stroke-linecap="round" d="m21 21-4.35-4.35" />
+        </svg>
+        <input
+          type="text"
+          [value]="searchTerm()"
+          (input)="onSearchChange($event.target.value)"
+          placeholder="Search by username or email..."
+          class="inp w-full pl-9 pr-4 py-2.5 border border-zinc-200 text-sm text-zinc-800 placeholder-zinc-400 bg-white focus:outline-none focus:border-zinc-900 transition-colors duration-150"
+          [class.opacity-60]="usersLoading()" [class.cursor-not-allowed]="usersLoading()" />
+      </div>
+      <div class="flex gap-2">
+        <select
+          class="inp flex-1 sm:flex-none border border-zinc-200 text-sm text-zinc-700 pl-3 pr-9 py-2.5 bg-white focus:outline-none appearance-none transition-colors duration-200"
+          (change)="onRoleFilterChange($any($event.target).value)" [disabled]="usersLoading()"
+          [class.opacity-60]="usersLoading()" [class.cursor-not-allowed]="usersLoading()">
+          <option value="">All Roles</option>
+          <option value="SENIOR">Senior</option>
+          <option value="JUNIOR">Junior</option>
+        </select>
+        <select
+          class="inp flex-1 sm:flex-none border border-zinc-200 text-sm text-zinc-700 pl-3 pr-9 py-2.5 bg-white focus:outline-none appearance-none transition-colors duration-200"
+          (change)="onStatusFilterChange($any($event.target).value)" [disabled]="usersLoading()"
+          [class.opacity-60]="usersLoading()" [class.cursor-not-allowed]="usersLoading()">
+          <option value="">All Statuses</option>
+          <option value="ACTIVE">Active</option>
+          <option value="DISABLED">Disabled</option>
+        </select>
+      </div>
+      <div class="hidden sm:flex items-center gap-3 transition-colors duration-200">
+        <span class="text-xs t-label text-zinc-400">Showing {{ totalOnPage() }} of {{ totalElements() }} users</span>
+        @if (usersLoading()) {
+        <output class="inline-flex items-center gap-2 text-xs t-label text-zinc-400" aria-live="polite">
+          <svg class="w-3.5 h-3.5 animate-spin text-zinc-400" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v3a5 5 0 0 0-5 5H4z"></path>
+          </svg>
+          Loading…
+        </output>
+        }
+      </div>
+    </div>
+
+    @if (usersLoadError()) {
+    <div
+      class="user-load-error mb-5 b-std border border-red-200 bg-red-50 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+      role="alert">
+      <p class="text-sm text-red-700">{{ usersLoadError() }}</p>
+      <button type="button" (click)="loadUsers()"
+        class="user-load-error__retry text-sm px-3 py-1.5 border border-red-200 text-red-700 hover:border-red-300 hover:bg-red-100 transition-colors">
+        Retry
+      </button>
+    </div>
+    }
+    <div class="b-std border border-zinc-200 hidden md:block overflow-x-auto transition-colors duration-200 relative"
+      [attr.aria-busy]="usersLoading()">
+      @if (usersLoading()) {
+      <div class="users-overlay absolute inset-0 z-10 flex items-center justify-center">
+        <output class="inline-flex items-center gap-3 text-sm text-zinc-600" aria-live="polite">
+          <svg class="w-5 h-5 animate-spin text-zinc-600" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v3a5 5 0 0 0-5 5H4z"></path>
+          </svg>
+          <span>Loading users…</span>
+        </output>
+      </div>
+      }
+      <table class="w-full text-sm min-w-[900px]">
+        <thead>
+          <tr class="bg-thead bg-zinc-50 border-b b-std border-zinc-200 transition-colors duration-200">
+            <th
+              class="text-left px-5 py-3.5 text-xs tracking-widest uppercase t-label text-zinc-400 font-medium whitespace-nowrap transition-colors duration-200">
+              ID
+            </th>
+            <th
+              class="text-left px-5 py-3.5 text-xs tracking-widest uppercase t-label text-zinc-400 font-medium whitespace-nowrap transition-colors duration-200">
+              Username
+            </th>
+            <th
+              class="text-left px-5 py-3.5 text-xs tracking-widest uppercase t-label text-zinc-400 font-medium transition-colors duration-200">
+              Email
+            </th>
+            <th
+              class="text-left px-5 py-3.5 text-xs tracking-widest uppercase t-label text-zinc-400 font-medium whitespace-nowrap transition-colors duration-200">
+              Role
+            </th>
+            <th
+              class="text-left px-5 py-3.5 text-xs tracking-widest uppercase t-label text-zinc-400 font-medium whitespace-nowrap transition-colors duration-200">
+              Status
+            </th>
+            <th
+              class="text-left px-5 py-3.5 text-xs tracking-widest uppercase t-label text-zinc-400 font-medium whitespace-nowrap transition-colors duration-200">
+              Created
+            </th>
+            <th
+              class="text-right px-5 py-3.5 text-xs tracking-widest uppercase t-label text-zinc-400 font-medium whitespace-nowrap transition-colors duration-200">
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (u of visibleUsers(); track u.id) {
+          <tr class="bg-row bg-white border-b b-light border-zinc-100 hover:bg-zinc-50 transition-colors duration-150">
+            <td class="px-5 py-4 uuid-cell">
+              <span class="t-mono text-zinc-400 font-mono text-xs truncate block transition-colors duration-200"
+                title="a1b2c3d4-e5f6-7890-abcd-ef1234567890">{{ u.id.slice(0, 4) }}…</span>
+            </td>
+            <td class="px-5 py-4 font-medium t-head text-zinc-800 text-sm transition-colors duration-200">
+              {{ u.username }}
+            </td>
+            <td class="px-5 py-4 t-sub text-zinc-500 text-sm transition-colors duration-200">
+              {{ u.email }}
+            </td>
+            <td class="px-5 py-4">
+              <span
+                class="badge-senior inline-block border border-zinc-900 text-zinc-900 text-xs px-2.5 py-0.5 tracking-wide uppercase font-medium whitespace-nowrap transition-colors duration-200">{{
+                u.role }}</span>
+            </td>
+            <td class="px-5 py-4">
+              <span class="inline-flex items-center gap-1.5 text-xs font-medium whitespace-nowrap"
+                [ngClass]="statusConfig[u.status]?.text">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500" [ngClass]="statusConfig[u.status]?.dot"></span>
+                {{ u.status }}
+              </span>
+            </td>
+            <td class="px-5 py-4 t-label text-zinc-400 text-xs whitespace-nowrap transition-colors duration-200">
+              {{ u.createdAt }}
+            </td>
+            <td class="px-5 py-4 text-right">
+              <div class="flex items-center justify-end gap-2">
+                <button type="button" (click)="openEditUserModel(u)" [disabled]="usersLoading()"
+                  class="btn-edit text-xs border border-zinc-300 text-zinc-600 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 whitespace-nowrap transition-colors duration-150"
+                  [class.opacity-50]="usersLoading()" [class.cursor-not-allowed]="usersLoading()">
+                  Edit
+                </button>
+                <button type="button" (click)="openDeactivateUserModel(u)"
+                  [disabled]="usersLoading() || u.status !== 'ACTIVE'"
+                  class="btn-deact text-xs border border-zinc-300 text-zinc-400 px-3 py-1.5 hover:border-red-300 hover:text-red-600 whitespace-nowrap transition-colors duration-150"
+                  [class.opacity-50]="usersLoading() || u.status !== 'ACTIVE'"
+                  [class.cursor-not-allowed]="usersLoading() || u.status !== 'ACTIVE'">
+                  Deactivate
+                </button>
+                <button type="button" (click)="openDeleteUserModel(u)" [disabled]="usersLoading()"
+                  class="btn-delete text-xs border border-zinc-300 text-zinc-400 px-3 py-1.5 hover:border-red-300 hover:text-red-600 whitespace-nowrap transition-colors duration-150"
+                  [class.opacity-50]="usersLoading()" [class.cursor-not-allowed]="usersLoading()">
+                  Delete User
+                </button>
+              </div>
+            </td>
+          </tr>
+          } @empty {
+          <tr class="bg-row bg-white border-b b-light border-zinc-100">
+            <td colspan="7" class="px-5 py-10 text-center text-sm text-zinc-500">
+              @if (usersLoading()) {
+              <output class="inline-flex items-center gap-2" aria-live="polite">
+                <svg class="w-4 h-4 animate-spin text-zinc-500" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v3a5 5 0 0 0-5 5H4z"></path>
+                </svg>
+                Loading users…
+              </output>
+              } @else if (usersLoadError()) {
+              Unable to load users.
+              } @else {
+              No users found.
+              }
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="md:hidden b-std border border-zinc-200 divide-y transition-colors duration-200 relative"
+      [attr.aria-busy]="usersLoading()">
+      @if (usersLoading()) {
+      <div class="users-overlay absolute inset-0 z-10 flex items-center justify-center">
+        <output class="inline-flex items-center gap-3 text-sm text-zinc-600" aria-live="polite">
+          <svg class="w-5 h-5 animate-spin text-zinc-600" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v3a5 5 0 0 0-5 5H4z"></path>
+          </svg>
+          <span>Loading users…</span>
+        </output>
+      </div>
+      }
+      @for (u of visibleUsers(); track u.id) {
+      <div class="bg-row bg-white p-4 transition-colors duration-200">
+        <div class="flex items-start justify-between mb-3">
+          <div class="min-w-0">
+            <p class="text-sm font-medium t-head text-zinc-800 truncate transition-colors duration-200">
+              {{ u.username }}
+            </p>
+            <p class="text-xs t-sub text-zinc-500 truncate transition-colors duration-200">
+              {{ u.email }}
+            </p>
+            <p class="text-xs t-mono text-zinc-400 font-mono mt-0.5 transition-colors duration-200">
+              {{ u.id.slice(0, 4) }}…
+            </p>
+          </div>
+          <span class="inline-flex items-center gap-1.5 text-xs font-medium shrink-0 ml-3"
+            [class.text-emerald-700]="u.status === 'ACTIVE'" [class.text-zinc-400]="u.status !== 'ACTIVE'">
+            <span class="w-1.5 h-1.5 rounded-full" [class.bg-emerald-500]="u.status === 'ACTIVE'"
+              [class.bg-zinc-300]="u.status !== 'ACTIVE'"></span>
+            {{ u.status }}
+          </span>
+        </div>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <span
+            class="self-start inline-block text-xs px-2 py-0.5 tracking-wide uppercase font-medium transition-colors duration-200"
+            [class.badge-senior]="u.role === 'SENIOR'" [class.badge-junior]="u.role !== 'SENIOR'">
+            {{ u.role }}
+          </span>
+          <div class="flex gap-2 flex-wrap justify-end">
+            <button type="button" (click)="openEditUserModel(u)" [disabled]="usersLoading()"
+              class="btn-edit text-xs border border-zinc-300 text-zinc-600 px-3 py-1.5 hover:border-zinc-900 hover:text-zinc-900 transition-colors"
+              [class.opacity-50]="usersLoading()" [class.cursor-not-allowed]="usersLoading()">
+              Edit
+            </button>
+            <button type="button" (click)="openDeactivateUserModel(u)"
+              [disabled]="usersLoading() || u.status !== 'ACTIVE'"
+              class="btn-deact text-xs border border-zinc-300 text-zinc-400 px-3 py-1.5 hover:border-red-300 hover:text-red-600 transition-colors"
+              [class.cursor-not-allowed]="usersLoading() || u.status !== 'ACTIVE'"
+              [class.opacity-50]="usersLoading() || u.status !== 'ACTIVE'" [class.text-zinc-300]="u.status !== 'ACTIVE'"
+              [class.border-zinc-200]="u.status !== 'ACTIVE'">
+              Deactivate
+            </button>
+            <button type="button" (click)="openDeleteUserModel(u)" [disabled]="usersLoading()"
+              class="btn-delete text-xs border border-zinc-300 text-zinc-400 px-3 py-1.5 hover:border-red-300 hover:text-red-600 transition-colors"
+              [class.opacity-50]="usersLoading()" [class.cursor-not-allowed]="usersLoading()">
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+      } @empty {
+      <div class="bg-row bg-white p-6 text-sm text-zinc-500">
+        @if (usersLoading()) {
+        <output class="inline-flex items-center gap-2" aria-live="polite">
+          <svg class="w-4 h-4 animate-spin text-zinc-500" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v3a5 5 0 0 0-5 5H4z"></path>
+          </svg>
+          Loading users…
+        </output>
+        } @else if (usersLoadError()) {
+        Unable to load users.
+        } @else {
+        No users found.
+        }
+      </div>
+      }
+    </div>
+
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 mt-5">
+      <p class="text-xs t-label text-zinc-400 order-2 sm:order-1 transition-colors duration-200">
+        Showing {{ totalOnPage() }} of {{ totalElements() }} users
+      </p>
+      <div class="flex items-center gap-1 order-1 sm:order-2">
+        <button
+          class="pag-btn w-8 h-8 border border-zinc-200 text-zinc-400 text-xs flex items-center justify-center hover:border-zinc-900 hover:text-zinc-900 transition-colors"
+          (click)="goToPage(currentPage() - 1)" [disabled]="usersLoading() || currentPage() <= 1"
+          [class.opacity-50]="usersLoading() || currentPage() <= 1"
+          [class.cursor-not-allowed]="usersLoading() || currentPage() <= 1">
+          ‹
+        </button>
+        <button
+          class="pag-active w-8 h-8 border border-zinc-900 bg-zinc-900 text-white text-xs flex items-center justify-center">
+          {{ currentPage() }}
+        </button>
+        <button
+          class="pag-btn w-8 h-8 border border-zinc-200 text-zinc-500 text-xs flex items-center justify-center hover:border-zinc-900 hover:text-zinc-900 transition-colors"
+          (click)="goToPage(currentPage() + 1)"
+          [disabled]="usersLoading() || (totalPages() && currentPage() >= totalPages())"
+          [class.opacity-50]="usersLoading() || (totalPages() && currentPage() >= totalPages())"
+          [class.cursor-not-allowed]="
+            usersLoading() || (totalPages() && currentPage() >= totalPages())
+          ">
+          ›
+        </button>
+      </div>
+    </div>
+  </div>
+  @if (isCreateUserModelOpen()) {
+  <div id="createModal" (click)="closeCreateUserModel()"
+    class="fixed inset-0 z-50 modal-backdrop bg-black/30 flex items-end sm:items-center justify-center sm:px-4 p-4 sm:p-0">
+    <form [formGroup]="createForm" (ngSubmit)="onCreateUser()" (click)="$event.stopPropagation()"
+      class="modal-box bg-white border border-zinc-200 w-full sm:max-w-md shadow-2xl transition-colors duration-200 flex flex-col max-h-[90vh]">
+      <div
+        class="modal-head flex items-center justify-between px-6 sm:px-7 py-5 border-b border-zinc-100 transition-colors duration-200 shrink-0">
+        <div>
+          <p
+            class="text-xs tracking-widest uppercase t-label text-zinc-400 font-medium mb-0.5 transition-colors duration-200">
+            Administration
+          </p>
+          <h3 class="serif text-xl font-semibold t-head text-zinc-900 transition-colors duration-200">
+            Create New User
+          </h3>
+        </div>
+        <button (click)="closeCreateUserModel()" type="button"
+          class="t-label text-zinc-400 hover:text-zinc-900 p-1 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="px-6 sm:px-7 py-6 space-y-5 overflow-y-auto">
+        <div>
+          <label
+            class="block text-xs tracking-widest uppercase t-label text-zinc-400 font-medium mb-2 transition-colors duration-200">Username
+            <span class="text-red-400">*</span></label>
+          <input formControlName="username" type="text" placeholder="e.g. john.doe"
+            class="inp w-full border border-zinc-200 px-4 py-2.5 text-sm text-zinc-800 placeholder-zinc-400 bg-white focus:outline-none focus:border-zinc-900 transition-colors duration-150" />
+          @if (showCreateFieldError('username')) {
+          <p class="mt-1.5 text-xs text-red-600 leading-relaxed">
+            {{ createFieldErrorText('username') }}
+          </p>
+          }
+        </div>
+        <div>
+          <label
+            class="block text-xs tracking-widest uppercase t-label text-zinc-400 font-medium mb-2 transition-colors duration-200">Email
+            Address <span class="text-red-400">*</span></label>
+          <input formControlName="email" type="email" placeholder="user@lexfirm.com"
+            class="inp w-full border border-zinc-200 px-4 py-2.5 text-sm text-zinc-800 placeholder-zinc-400 bg-white focus:outline-none focus:border-zinc-900 transition-colors duration-150" />
+          @if (showCreateFieldError('email')) {
+          <p class="mt-1.5 text-xs text-red-600 leading-relaxed">
+            {{ createFieldErrorText('email') }}
+          </p>
+          }
+        </div>
+        <div>
+          <label
+            class="block text-xs tracking-widest uppercase t-label text-zinc-400 font-medium mb-2 transition-colors duration-200">Role
+            <span class="text-red-400">*</span></label>
+          <select formControlName="role"
+            class="inp w-full border border-zinc-200 pl-4 pr-9 py-2.5 text-sm text-zinc-700 bg-white focus:outline-none appearance-none transition-colors duration-200">
+            <option value="">Select a role...</option>
+            <option value="SENIOR">Senior</option>
+            <option value="JUNIOR">Junior</option>
+          </select>
+          @if (showCreateFieldError('role')) {
+          <p class="mt-1.5 text-xs text-red-600 leading-relaxed">
+            {{ createFieldErrorText('role') }}
+          </p>
+          }
+        </div>
+        @if (createRole() === 'JUNIOR') {
+        <div id="c-seniorIdField">
+          <label
+            class="block text-xs tracking-widest uppercase t-label text-zinc-400 font-medium mb-2 transition-colors duration-200">Assign
+            Senior <span class="text-red-400">*</span></label>
+          <select formControlName="seniorId"
+            class="inp w-full border border-zinc-200 pl-4 pr-9 py-2.5 text-sm text-zinc-700 bg-white focus:outline-none appearance-none transition-colors duration-200">
+            <option value="">Select a senior lawyer...</option>
+            @for (s of seniorSelectOptions(); track s.id) {
+            <option [value]="s.id">{{ s.username }}</option>
+            }
+          </select>
+          @if (showCreateFieldError('seniorId')) {
+          <p class="mt-1.5 text-xs text-red-600 leading-relaxed">
+            {{ createFieldErrorText('seniorId') }}
+          </p>
+          }
+          <p class="text-xs t-muted text-zinc-400 mt-1.5 transition-colors duration-200">
+            Junior lawyers must be assigned to a senior.
+          </p>
+        </div>
+        }
+        <div>
+          <label
+            class="block text-xs tracking-widest uppercase t-label text-zinc-400 font-medium mb-2 transition-colors duration-200">Temporary
+            Password <span class="text-red-400">*</span></label>
+          <input formControlName="password" type="password" placeholder="Min. 8 characters"
+            class="inp w-full border border-zinc-200 px-4 py-2.5 text-sm text-zinc-800 placeholder-zinc-400 bg-white focus:outline-none focus:border-zinc-900 transition-colors duration-150" />
+          @if (showCreateFieldError('password')) {
+          <p class="mt-1.5 text-xs text-red-600 leading-relaxed">
+            {{ createFieldErrorText('password') }}
+          </p>
+          }
+        </div>
+        @if (createError()) {
+        <p class="text-xs text-red-600 leading-relaxed">{{ createError() }}</p>
+        }
+        <p
+          class="modal-note text-xs text-zinc-400 leading-relaxed border-l-2 border-zinc-200 pl-3 transition-colors duration-200">
+          An audit log entry will be created automatically upon user creation.
+        </p>
+      </div>
+
+      <div
+        class="modal-foot flex items-center gap-3 px-6 sm:px-7 py-5 border-t border-zinc-100 transition-colors duration-200 shrink-0">
+        <button type="button" (click)="closeCreateUserModel()"
+          class="btn-outline flex-1 border border-zinc-200 text-sm text-zinc-600 py-2.5 hover:border-zinc-900 hover:text-zinc-900 transition-colors">
+          Cancel
+        </button>
+        <button type="submit" [disabled]="createForm.invalid || createSubmitting()"
+          class="btn-primary flex-1 bg-zinc-900 text-white text-sm py-2.5 hover:bg-zinc-700 transition-colors">
+          {{ createSubmitting() ? 'Creating...' : 'Create User' }}
+        </button>
+      </div>
+    </form>
+  </div>
+  }
+
+  @if (isEditUserModelOpen()) {
+  <div id="editModal" (click)="closeEditUserModel()"
+    class="fixed inset-0 z-50 modal-backdrop bg-black/30 flex items-end sm:items-center justify-center sm:px-4 p-4 sm:p-0">
+    <form [formGroup]="editForm" (ngSubmit)="onEditUser()" (click)="$event.stopPropagation()"
+      class="modal-box bg-white border border-zinc-200 w-full sm:max-w-md shadow-2xl transition-colors duration-200 flex flex-col max-h-[90vh]">
+      <div
+        class="modal-head flex items-center justify-between px-6 sm:px-7 py-5 border-b border-zinc-100 transition-colors duration-200 shrink-0">
+        <div>
+          <p
+            class="text-xs tracking-widest uppercase t-label text-zinc-400 font-medium mb-0.5 transition-colors duration-200">
+            Administration
+          </p>
+          <h3 class="serif text-xl font-semibold t-head text-zinc-900 transition-colors duration-200">
+            Edit User
+          </h3>
+        </div>
+        <button type="button" (click)="closeEditUserModel()"
+          class="t-label text-zinc-400 hover:text-zinc-900 p-1 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="px-6 sm:px-7 py-6 space-y-5 overflow-y-auto">
+        <div>
+          <label
+            class="block text-xs tracking-widest uppercase t-label text-zinc-400 font-medium mb-2 transition-colors duration-200">User
+            ID</label>
+          <input type="text" [formControl]="editForm.controls.id"
+            class="inp-disabled w-full border border-zinc-100 bg-zinc-50 px-4 py-2.5 text-sm text-zinc-400 font-mono cursor-not-allowed transition-colors duration-200" />
+        </div>
+        <div>
+          <label
+            class="block text-xs tracking-widest uppercase t-label text-zinc-400 font-medium mb-2 transition-colors duration-200">Username</label>
+          <input type="text" formControlName="username"
+            class="inp w-full border border-zinc-200 px-4 py-2.5 text-sm text-zinc-800 bg-white focus:outline-none focus:border-zinc-900 transition-colors duration-150" />
+          @if (showEditFieldError('username')) {
+          <p class="mt-1.5 text-xs text-red-600 leading-relaxed">
+            {{ editFieldErrorText('username') }}
+          </p>
+          }
+        </div>
+        <div>
+          <label
+            class="block text-xs tracking-widest uppercase t-label text-zinc-400 font-medium mb-2 transition-colors duration-200">Email
+            Address</label>
+          <input type="email" [formControl]="editForm.controls.email"
+            class="inp-disabled w-full border border-zinc-100 bg-zinc-50 px-4 py-2.5 text-sm text-zinc-400 cursor-not-allowed transition-colors duration-200" />
+        </div>
+        <div>
+          <label
+            class="block text-xs tracking-widest uppercase t-label text-zinc-400 font-medium mb-2 transition-colors duration-200">Role
+            <span class="text-red-400">*</span></label>
+          <select formControlName="role"
+            class="inp w-full border border-zinc-200 pl-4 pr-9 py-2.5 text-sm text-zinc-700 bg-white focus:outline-none appearance-none transition-colors duration-200">
+            <option value="SENIOR">Senior</option>
+            <option value="JUNIOR">Junior</option>
+          </select>
+          @if (showEditFieldError('role')) {
+          <p class="mt-1.5 text-xs text-red-600 leading-relaxed">
+            {{ editFieldErrorText('role') }}
+          </p>
+          }
+        </div>
+        @if (editRole() === 'JUNIOR') {
+        <div id="e-seniorIdField">
+          <label
+            class="block text-xs tracking-widest uppercase t-label text-zinc-400 font-medium mb-2 transition-colors duration-200">Assigned
+            Senior</label>
+          <select formControlName="seniorId"
+            class="inp w-full border border-zinc-200 pl-4 pr-9 py-2.5 text-sm text-zinc-700 bg-white focus:outline-none appearance-none transition-colors duration-200">
+            <option value="">Select a senior lawyer...</option>
+            @for (s of seniorSelectOptions(); track s.id) {
+            <option [value]="s.id">{{ s.username }}</option>
+            }
+          </select>
+          @if (showEditFieldError('seniorId')) {
+          <p class="mt-1.5 text-xs text-red-600 leading-relaxed">
+            {{ editFieldErrorText('seniorId') }}
+          </p>
+          }
+        </div>
+        }
+        <div>
+          <label
+            class="block text-xs tracking-widest uppercase t-label text-zinc-400 font-medium mb-2 transition-colors duration-200">Account
+            Status</label>
+          <select formControlName="status"
+            class="inp w-full border border-zinc-200 pl-4 pr-9 py-2.5 text-sm text-zinc-700 bg-white focus:outline-none appearance-none transition-colors duration-200">
+            <option value="ACTIVE" selected>Active</option>
+            <option value="DISABLED">Disabled</option>
+          </select>
+          @if (showEditFieldError('status')) {
+          <p class="mt-1.5 text-xs text-red-600 leading-relaxed">
+            {{ editFieldErrorText('status') }}
+          </p>
+          }
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label
+              class="block text-xs tracking-widest uppercase t-label text-zinc-400 font-medium mb-1 transition-colors duration-200">Created</label>
+            <p class="text-sm t-sub text-zinc-500 transition-colors duration-200">
+              {{ selectedUserForEdit?.createdAt || '' }}
+            </p>
+          </div>
+          <div>
+            <label
+              class="block text-xs tracking-widest uppercase t-label text-zinc-400 font-medium mb-1 transition-colors duration-200">Last
+              Updated</label>
+            <p class="text-sm t-sub text-zinc-500 transition-colors duration-200">
+              {{ selectedUserForEdit?.updatedAt || '' }}
+            </p>
+          </div>
+        </div>
+        @if (editError()) {
+        <p class="text-xs text-red-600 leading-relaxed">{{ editError() }}</p>
+        }
+        <p
+          class="modal-note text-xs text-zinc-400 leading-relaxed border-l-2 border-zinc-200 pl-3 transition-colors duration-200">
+          Changes to role, senior assignment, or status will be recorded in the audit log.
+        </p>
+      </div>
+
+      <div
+        class="modal-foot flex items-center gap-3 px-6 sm:px-7 py-5 border-t border-zinc-100 transition-colors duration-200 shrink-0">
+        <button type="button" (click)="closeEditUserModel()"
+          class="btn-outline flex-1 border border-zinc-200 text-sm text-zinc-600 py-2.5 hover:border-zinc-900 hover:text-zinc-900 transition-colors">
+          Cancel
+        </button>
+        <button type="submit" [disabled]="editForm.invalid || editSubmitting()"
+          class="btn-primary flex-1 bg-zinc-900 text-white text-sm py-2.5 hover:bg-zinc-700 transition-colors">
+          {{ editSubmitting() ? 'Saving...' : 'Save Changes' }}
+        </button>
+      </div>
+    </form>
+  </div>
+  }
+
+  @if (isDeactivateUserModelOpen()) {
+  <div id="deactivateModal" (click)="closeDeactivateUserModel()"
+    class="fixed inset-0 z-50 modal-backdrop bg-black/30 flex items-end sm:items-center justify-center sm:px-4 p-4 sm:p-0">
+    <form [formGroup]="deactivateForm" (ngSubmit)="onDeactivateUser()" (click)="$event.stopPropagation()"
+      class="modal-box bg-white border border-zinc-200 w-full sm:max-w-sm shadow-2xl transition-colors duration-200 flex flex-col max-h-[90vh]">
+      <div class="px-6 sm:px-7 pt-7 pb-6 overflow-y-auto">
+        <div
+          class="w-10 h-10 b-std border border-zinc-200 flex items-center justify-center mb-5 transition-colors duration-200">
+          <svg class="w-5 h-5 t-sub text-zinc-500 transition-colors duration-200" fill="none" stroke="currentColor"
+            stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+          </svg>
+        </div>
+        <h3 class="serif text-xl font-semibold t-head text-zinc-900 mb-2 transition-colors duration-200">
+          Deactivate User?
+        </h3>
+        <p class="text-sm t-sub text-zinc-500 leading-relaxed transition-colors duration-200">
+          <span class="font-medium t-head text-zinc-700 transition-colors duration-200">{{
+            deactivateUserTarget?.username
+            }}</span>
+          <span class="text-xs t-label text-zinc-400 ml-1 transition-colors duration-200">({{
+            deactivateUserTarget?.email }})</span>
+          will lose all system access immediately. All data will be preserved. This action is
+          logged.
+        </p>
+        <div class="warn-callout mt-4 border border-amber-200 bg-amber-50 px-4 py-3 transition-colors duration-200">
+          <p class="text-xs text-amber-700 leading-relaxed transition-colors duration-200">
+            <span class="font-medium">Warning:</span> This senior lawyer may have junior lawyers
+            assigned. Deactivating will not automatically reassign their juniors.
+          </p>
+        </div>
+        @if (deactivateError()) {
+        <p class="mt-3 text-xs text-red-600 leading-relaxed">{{ deactivateError() }}</p>
+        }
+      </div>
+      <div
+        class="modal-foot flex items-center gap-3 px-6 sm:px-7 py-5 border-t border-zinc-100 transition-colors duration-200 shrink-0">
+        <button type="button" (click)="closeDeactivateUserModel()"
+          class="btn-outline flex-1 border border-zinc-200 text-sm text-zinc-600 py-2.5 hover:border-zinc-900 hover:text-zinc-900 transition-colors">
+          Cancel
+        </button>
+        <button type="submit" [disabled]="deactivateSubmitting()"
+          class="flex-1 border border-red-300 text-red-600 text-sm py-2.5 hover:bg-red-50 transition-colors">
+          {{ deactivateSubmitting() ? 'Deactivating...' : 'Deactivate' }}
+        </button>
+      </div>
+    </form>
+  </div>
+  }
+
+  @if (isDeleteUserModelOpen()) {
+  <div id="deleteModal" (click)="closeDeleteUserModel()"
+    class="fixed inset-0 z-50 modal-backdrop bg-black/30 flex items-end sm:items-center justify-center sm:px-4 p-4 sm:p-0">
+    <form [formGroup]="deleteForm" (ngSubmit)="onDeleteUser()" (click)="$event.stopPropagation()"
+      class="modal-box bg-white border border-zinc-200 w-full sm:max-w-sm shadow-2xl transition-colors duration-200 flex flex-col max-h-[90vh]">
+      <div class="px-6 sm:px-7 pt-7 pb-6 overflow-y-auto">
+        <div class="w-10 h-10 border border-red-200 bg-red-50 flex items-center justify-center mb-5">
+          <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+          </svg>
+        </div>
+        <h3 class="serif text-xl font-semibold t-head text-zinc-900 mb-2 transition-colors duration-200">
+          Delete User Permanently?
+        </h3>
+        <p class="text-sm t-sub text-zinc-500 leading-relaxed transition-colors duration-200">
+          <span class="font-medium t-head text-zinc-700 transition-colors duration-200">{{
+            deleteUserTarget?.username
+            }}</span>
+          will be permanently removed. This action
+          <span class="font-medium text-red-600">cannot be undone</span>.
+        </p>
+        <div class="mt-4">
+          <label
+            class="block text-xs tracking-widest uppercase t-label text-zinc-400 font-medium mb-2 transition-colors duration-200">Type
+            username to confirm</label>
+          <input type="text" formControlName="usernameConfirm" [placeholder]="deleteUserTarget?.username || ''"
+            class="inp w-full border border-zinc-200 px-4 py-2.5 text-sm text-zinc-800 placeholder-zinc-400 bg-white focus:outline-none focus:border-red-400 transition-colors duration-150" />
+          @if (showDeleteFieldError('usernameConfirm')) {
+          <p class="mt-1.5 text-xs text-red-600 leading-relaxed">
+            {{ deleteFieldErrorText('usernameConfirm') }}
+          </p>
+          }
+        </div>
+        @if (deleteError()) {
+        <p class="mt-3 text-xs text-red-600 leading-relaxed">{{ deleteError() }}</p>
+        }
+      </div>
+      <div
+        class="modal-foot flex items-center gap-3 px-6 sm:px-7 py-5 border-t border-zinc-100 transition-colors duration-200 shrink-0">
+        <button type="button" (click)="closeDeleteUserModel()"
+          class="btn-outline flex-1 border border-zinc-200 text-sm text-zinc-600 py-2.5 hover:border-zinc-900 hover:text-zinc-900 transition-colors">
+          Cancel
+        </button>
+        <button type="submit" [disabled]="deleteSubmitting()"
+          class="flex-1 bg-red-600 border border-red-600 text-white text-sm py-2.5 hover:bg-red-700 transition-colors">
+          {{ deleteSubmitting() ? 'Deleting...' : 'Delete Permanently' }}
+        </button>
+      </div>
+    </form>
+  </div>
+  }
+
+  <div id="viewModal"
+    class="hidden fixed inset-0 z-50 modal-backdrop bg-black/30 flex items-end sm:items-center justify-center sm:px-4 p-4 sm:p-0">
+    <div
+      class="modal-box bg-white border border-zinc-200 w-full sm:max-w-md shadow-2xl transition-colors duration-200 flex flex-col max-h-[90vh]">
+      <div
+        class="modal-head flex items-center justify-between px-6 sm:px-7 py-5 border-b border-zinc-100 transition-colors duration-200 shrink-0">
+        <div>
+          <p
+            class="text-xs tracking-widest uppercase t-label text-zinc-400 font-medium mb-0.5 transition-colors duration-200">
+            Administration
+          </p>
+          <h3 class="serif text-xl font-semibold t-head text-zinc-900 transition-colors duration-200">
+            User Details
+          </h3>
+        </div>
+        <button type="button" class="t-label text-zinc-400 hover:text-zinc-900 p-1 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="px-6 sm:px-7 py-6 space-y-5 overflow-y-auto">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 bg-zinc-900 flex items-center justify-center shrink-0">
+            <span class="text-white text-sm font-medium tracking-widest">EV</span>
+          </div>
+          <div>
+            <p class="text-base font-semibold t-head text-zinc-900 transition-colors duration-200">
+              eleanor.voss
+            </p>
+            <p class="text-sm t-sub text-zinc-500 transition-colors duration-200">
+              eleanor.voss@lexfirm.com
+            </p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="field-bg bg-zinc-50 border border-zinc-100 px-4 py-3 transition-colors duration-200">
+            <p
+              class="field-label text-xs text-zinc-400 tracking-widest uppercase font-medium mb-1 transition-colors duration-200">
+              ID
+            </p>
+            <p class="field-mono text-xs font-mono text-zinc-600 truncate transition-colors duration-200"
+              title="b2c3d4e5-f6a7-8901-bcde-f12345678901">
+              b2c3d4e5…
+            </p>
+          </div>
+          <div class="field-bg bg-zinc-50 border border-zinc-100 px-4 py-3 transition-colors duration-200">
+            <p
+              class="field-label text-xs text-zinc-400 tracking-widest uppercase font-medium mb-1 transition-colors duration-200">
+              Role
+            </p>
+            <span
+              class="badge-junior inline-block border border-zinc-400 text-zinc-600 text-xs px-2 py-0.5 tracking-wide uppercase font-medium transition-colors duration-200">Junior</span>
+          </div>
+          <div class="field-bg bg-zinc-50 border border-zinc-100 px-4 py-3 transition-colors duration-200">
+            <p
+              class="field-label text-xs text-zinc-400 tracking-widest uppercase font-medium mb-1 transition-colors duration-200">
+              Status
+            </p>
+            <span class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Active
+            </span>
+          </div>
+          <div class="field-bg bg-zinc-50 border border-zinc-100 px-4 py-3 transition-colors duration-200">
+            <p
+              class="field-label text-xs text-zinc-400 tracking-widest uppercase font-medium mb-1 transition-colors duration-200">
+              Senior
+            </p>
+            <p class="field-val text-xs text-zinc-700 font-medium transition-colors duration-200">
+              harrison.blake
+            </p>
+          </div>
+          <div class="field-bg bg-zinc-50 border border-zinc-100 px-4 py-3 transition-colors duration-200">
+            <p
+              class="field-label text-xs text-zinc-400 tracking-widest uppercase font-medium mb-1 transition-colors duration-200">
+              Created
+            </p>
+            <p class="field-mono text-xs font-mono text-zinc-600 transition-colors duration-200">
+              14 Jan 2024
+            </p>
+          </div>
+          <div class="field-bg bg-zinc-50 border border-zinc-100 px-4 py-3 transition-colors duration-200">
+            <p
+              class="field-label text-xs text-zinc-400 tracking-widest uppercase font-medium mb-1 transition-colors duration-200">
+              Updated
+            </p>
+            <p class="field-mono text-xs font-mono text-zinc-600 transition-colors duration-200">
+              09 Mar 2026
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="modal-foot flex items-center gap-3 px-6 sm:px-7 py-5 border-t border-zinc-100 transition-colors duration-200 shrink-0">
+        <button type="button"
+          class="btn-outline flex-1 border border-zinc-200 text-sm text-zinc-600 py-2.5 hover:border-zinc-900 hover:text-zinc-900 transition-colors">
+          Close
+        </button>
+        <button type="button"
+          class="btn-primary flex-1 bg-zinc-900 text-white text-sm py-2.5 hover:bg-zinc-700 transition-colors">
+          Edit User
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

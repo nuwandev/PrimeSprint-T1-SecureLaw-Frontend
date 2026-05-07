@@ -1,0 +1,197 @@
+.nav-spacer {
+  height: var(--nav-height, 72px);
+}
+
+/* Theme tokens scoped to this component (matches User Management look) */
+:host {
+  display: block;
+  --nav-bg: #ffffff;
+  --nav-dd-bg: #ffffff;
+  --nav-border: #e4e4e7; /* zinc-200 */
+  --nav-text: #18181b;
+  --nav-muted: #71717a;
+  --nav-soft: #a1a1aa;
+  --nav-hover: #f4f4f5; /* zinc-100 */
+  --nav-active: #f4f4f5;
+  --nav-active-border: #18181b;
+  --nav-danger: #dc2626;
+  --nav-danger-hover-bg: #fef2f2;
+  --nav-danger-hover-text: #b91c1c;
+  --nav-logo-bg: #18181b;
+  --nav-logo-fg: #ffffff;
+  --nav-dd-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); /* like shadow-2xl */
+  --nav-dd-radius: 0px; /* match User Management modals/cards */
+}
+
+:host-context(html[data-theme='dark']) {
+  --nav-bg: #09090b;
+  --nav-dd-bg: #0f0f12;
+  --nav-border: #27272a;
+  --nav-text: #f4f4f5;
+  --nav-muted: #a1a1aa;
+  --nav-soft: #71717a;
+  --nav-hover: #18181b;
+  --nav-active: #18181b;
+  --nav-active-border: #ffffff;
+  --nav-danger: #f87171;
+  --nav-danger-hover-bg: #7f1d1d;
+  --nav-danger-hover-text: #ffffff;
+  --nav-logo-bg: #ffffff;
+  --nav-logo-fg: #18181b;
+  --nav-dd-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.55);
+}
+
+.nav-el {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: var(--nav-bg);
+  border-color: var(--nav-border);
+}
+
+button:focus-visible {
+  outline: 2px solid var(--nav-active-border);
+  outline-offset: 2px;
+}
+
+.logo-box {
+  background: var(--nav-logo-bg);
+}
+
+.logo-txt {
+  color: var(--nav-logo-fg);
+}
+
+.avatar {
+  background: var(--nav-logo-bg);
+}
+
+.avatar-txt {
+  color: var(--nav-logo-fg);
+}
+
+.nav-sep {
+  color: var(--nav-border);
+}
+
+.nav-caret {
+  color: var(--nav-muted);
+}
+
+.nav-el .t-head {
+  color: var(--nav-text);
+}
+
+.nav-el .t-label {
+  color: var(--nav-muted);
+}
+
+.theme-pill {
+  border-radius: 0;
+  background: transparent;
+  border-color: var(--nav-border);
+  color: var(--nav-muted);
+}
+
+.theme-pill-active {
+  background: var(--nav-text);
+  border-color: var(--nav-text);
+  color: var(--nav-bg);
+  box-shadow: inset 0 0 0 1px var(--nav-text);
+}
+
+.theme-pill-active:hover {
+  background: var(--nav-text);
+  border-color: var(--nav-text);
+  color: var(--nav-bg);
+}
+
+.theme-pill:hover {
+  background: var(--nav-hover);
+  border-color: var(--nav-active-border);
+  color: var(--nav-text);
+}
+
+.nav-trigger {
+  border-radius: 12px;
+}
+
+.nav-trigger:hover {
+  background: var(--nav-hover);
+}
+
+.nav-trigger:active {
+  background: var(--nav-active);
+}
+
+.nav-dd {
+  border-radius: var(--nav-dd-radius);
+  background: var(--nav-dd-bg);
+  border-color: var(--nav-border);
+  box-shadow: var(--nav-dd-shadow);
+}
+
+.nav-dd-item {
+  width: 100%;
+  text-align: left;
+  padding: 10px 16px;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: var(--nav-text);
+  background: transparent;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+  border-left: 0;
+}
+
+.nav-dd-item:hover {
+  background: var(--nav-hover);
+  color: var(--nav-text);
+}
+
+.nav-dd-item--active {
+  background: var(--nav-active);
+  color: var(--nav-text);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px var(--nav-active-border);
+}
+
+.nav-dd-item--active:hover {
+  background: var(--nav-active);
+}
+
+.nav-dd-item--danger {
+  color: var(--nav-danger);
+}
+
+.nav-dd-item--danger:hover {
+  background: var(--nav-danger-hover-bg);
+  color: var(--nav-danger-hover-text);
+  box-shadow: inset 0 0 0 1px var(--nav-danger);
+}
+
+/* Dropdown section dividers and spacing to match User Management */
+.nav-dd > div {
+  border-color: var(--nav-border);
+}
+
+.nav-dd ul {
+  background: var(--nav-dd-bg);
+}
+
+.nav-dd ul li + li .nav-dd-item {
+  border-top: 1px solid var(--nav-border);
+}
+
+/* If there's an explicit divider <li> (border-t), don't add an extra border above the next item */
+.nav-dd ul li.border-t + li .nav-dd-item {
+  border-top: 0;
+}
+
+/* Make dropdown dividers match theme even if Tailwind classes exist in template */
+.nav-dd .border-zinc-100 {
+  border-color: var(--nav-border);
+}

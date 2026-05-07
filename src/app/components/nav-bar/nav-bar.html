@@ -1,0 +1,166 @@
+<div class="nav-spacer" aria-hidden="true"></div>
+
+<nav
+  class="nav-el border-b px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between transition-colors duration-200"
+>
+  <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+    <div class="logo-box w-7 h-7 flex items-center justify-center shrink-0">
+      <span class="logo-txt text-xs font-bold tracking-widest">L</span>
+    </div>
+    <span class="serif text-lg sm:text-xl font-semibold tracking-wide t-head">SecureLaw</span>
+    <span class="nav-sep mx-1 sm:mx-2 hidden sm:inline">|</span>
+    <span class="text-xs t-label tracking-widest uppercase font-medium hidden sm:inline"
+      >Firm Management Console</span
+    >
+  </div>
+
+  <div class="relative flex items-center gap-2 sm:gap-3">
+    <button
+      type="button"
+      (click)="toggleMenu()"
+      class="nav-trigger flex items-center gap-2 sm:gap-3 px-2 py-1 transition-colors"
+      [attr.aria-expanded]="menuOpen()"
+      aria-haspopup="menu"
+    >
+      <div class="avatar w-8 h-8 rounded-full flex items-center justify-center shrink-0">
+        <span class="avatar-txt text-xs font-medium">AD</span>
+      </div>
+      <div class="text-right hidden sm:block">
+        <p class="text-xs font-medium t-head">Account</p>
+        <p class="text-xs t-label">{{ role || 'USER' }}</p>
+      </div>
+      <svg
+        class="nav-caret w-4 h-4 hidden sm:block"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+      >
+        <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
+      </svg>
+    </button>
+
+    @if (menuOpen()) {
+      <div
+        class="nav-dd absolute right-0 top-full mt-2 w-60 border shadow-xl z-50 rounded-lg overflow-hidden"
+        role="menu"
+      >
+        <div class="px-4 py-3 border-b border-zinc-100">
+          <p class="text-xs t-label tracking-widest uppercase">Signed in as</p>
+          <p class="text-sm font-medium t-head">{{ role || 'USER' }}</p>
+        </div>
+        <div class="px-4 py-3 border-b border-zinc-100">
+          <div class="flex items-center justify-between">
+            <p class="text-xs t-label tracking-widest uppercase">Theme</p>
+            <span class="text-xs t-label">{{ isDark ? 'Dark' : 'Light' }}</span>
+          </div>
+          <fieldset class="mt-2 grid grid-cols-2 gap-2">
+            <legend class="sr-only">Theme</legend>
+            <button
+              type="button"
+              class="theme-pill w-full px-3 py-2 text-sm border transition-colors"
+              [class.theme-pill-active]="!isDark"
+              (click)="setTheme('light')"
+              [attr.aria-pressed]="!isDark"
+            >
+              <span class="flex items-center justify-center gap-2">
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="4" />
+                  <path
+                    stroke-linecap="round"
+                    d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M18.66 5.34l-1.41 1.41"
+                  />
+                </svg>
+                <span>Light</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              class="theme-pill w-full px-3 py-2 text-sm border transition-colors"
+              [class.theme-pill-active]="isDark"
+              (click)="setTheme('dark')"
+              [attr.aria-pressed]="isDark"
+            >
+              <span class="flex items-center justify-center gap-2">
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z"
+                  />
+                </svg>
+                <span>Dark</span>
+              </span>
+            </button>
+          </fieldset>
+        </div>
+
+        <ul class="py-1">
+          <li>
+            <button
+              type="button"
+              class="nav-dd-item"
+              [class.nav-dd-item--active]="isActive('/chat')"
+              (click)="goToChat()"
+              role="menuitem"
+            >
+              Go to Chat
+            </button>
+          </li>
+
+          @if (canSeeAdmin) {
+            <li>
+              <button
+                type="button"
+                class="nav-dd-item"
+                [class.nav-dd-item--active]="isActive('/admin/user-management')"
+                (click)="goToUserManagement()"
+                role="menuitem"
+              >
+                User Management
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                class="nav-dd-item"
+                [class.nav-dd-item--active]="isActive('/admin/audit-logs')"
+                (click)="goToAuditLogs()"
+                role="menuitem"
+              >
+                Audit Logs
+              </button>
+            </li>
+          }
+
+          <li class="my-1 border-t border-zinc-100"></li>
+
+          <li>
+            <button
+              type="button"
+              class="nav-dd-item nav-dd-item--danger"
+              (click)="logout()"
+              role="menuitem"
+            >
+              Logout
+            </button>
+          </li>
+        </ul>
+      </div>
+    }
+  </div>
+</nav>
